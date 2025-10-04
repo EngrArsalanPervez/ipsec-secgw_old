@@ -589,7 +589,7 @@ int kni_main(struct rte_mempool *shared_pool) {
     promiscuous_on_kni = 1;
 
     char config_kni[32] = {0};
-    sprintf(config_kni, "(0,%d,%d,1)", (nb_lcores-2), (nb_lcores-1);
+    sprintf(config_kni, "(0,%d,%d,1)", (nb_lcores - 2), (nb_lcores - 1));
     ret = parse_config_kni(config_kni);
     if (ret < 0)
       rte_exit(EXIT_FAILURE, "Invalid KNI config\n");
