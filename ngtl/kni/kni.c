@@ -57,8 +57,8 @@ static struct rte_eth_conf port_conf = {
 };
 
 void print_kni_stats(void) {
-  printf("\nrx_packets:: %15" PRIu64 "\ntx_packets:: %15" PRIu64
-         "\nrx_dropped:: %15" PRIu64 "\ntx_dropped:: %15" PRIu64,
+  printf("\nrx_packets:: %20" PRIu64 "\ntx_packets:: %20" PRIu64
+         "\nrx_dropped:: %20" PRIu64 "\ntx_dropped:: %20" PRIu64,
          kni_stats[0].rx_packets, kni_stats[0].tx_packets,
          kni_stats[0].rx_dropped, kni_stats[0].tx_dropped);
 }
