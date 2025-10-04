@@ -586,7 +586,10 @@ int kni_main(struct rte_mempool *shared_pool) {
     init_kni();
     ports_mask = parse_unsigned("0x1");
     promiscuous_on_kni = 1;
-    ret = parse_config_kni("(0,6,7,1)");
+
+    char config_kni[32] = {0};
+    sprintf(config_kni, "(0,%d,%d,1)", KNI_CORE0, KNI_CORE1);
+    ret = parse_config_kni(config_kni);
     if (ret < 0)
       rte_exit(EXIT_FAILURE, "Invalid KNI config\n");
 

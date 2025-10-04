@@ -945,7 +945,7 @@ static void ipsec_eventmode_worker(struct eh_conf *conf) {
 int ipsec_launch_one_lcore(void *args) {
   uint32_t lcore_id = rte_lcore_id();
 
-  if (lcore_id == 6 || lcore_id == 7) {
+  if (lcore_id == KNI_CORE0 || lcore_id == KNI_CORE1) {
     kni_main(socket_ctx[0].mbuf_pool);
   }
 

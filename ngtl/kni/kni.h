@@ -10,6 +10,9 @@
 /* Max kernels threads per port */
 #define KNI_MAX_KTHREAD 32
 
+#define KNI_CORE0 4
+#define KNI_CORE1 5
+
 /*
  * Structure of port parameters
  */
