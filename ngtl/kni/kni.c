@@ -251,7 +251,6 @@ void init_kni(void) {
       num_of_kni_ports += (params[i]->nb_lcore_k ? params[i]->nb_lcore_k : 1);
     }
   }
-  printf("EUP:%u\n", num_of_kni_ports);
   rte_kni_init(num_of_kni_ports);
 }
 void init_port(uint16_t port) {

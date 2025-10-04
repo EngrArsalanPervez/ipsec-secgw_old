@@ -42,7 +42,6 @@ struct kni_interface_stats {
 };
 
 /* Globals (defined in kni.c) */
-extern struct kni_port_params *kni_port_params_array[RTE_MAX_ETHPORTS];
 extern struct rte_mempool *pktmbuf_pool;
 extern uint32_t ports_mask;
 extern int promiscuous_on_kni;
