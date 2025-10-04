@@ -56,6 +56,15 @@ static struct rte_eth_conf port_conf = {
         },
 };
 
+void print_kni_stats(void) {
+  printf("rx_packets:\t%lu\n"
+         "tx_packets:\t%lu\n"
+         "rx_dropped:\t%lu\n"
+         "tx_dropped:\t%lu\n",
+         kni_stats[0].rx_packets, kni_stats[0].tx_packets,
+         kni_stats[0].rx_dropped, kni_stats[0].tx_dropped);
+}
+
 void signal_handler_kni(void) {
   __atomic_fetch_add(&kni_stop, 1, __ATOMIC_RELAXED);
   return;

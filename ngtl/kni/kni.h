@@ -40,5 +40,6 @@ struct kni_interface_stats {
 
 int kni_main(struct rte_mempool *shared_pool);
 void signal_handler_kni(void);
+void print_kni_stats(void);
 
 #endif /* _KNI_H_ */
