@@ -122,6 +122,9 @@ void kni_egress(struct kni_port_params *p) {
       RTE_LOG(ERR, APP, "Error receiving from KNI\n");
       return;
     }
+
+    // Only send IKE Traffic
+
     /* Burst tx to eth */
     nb_tx = rte_eth_tx_burst(1, 1, pkts_burst, (uint16_t)num);
     if (nb_tx)
