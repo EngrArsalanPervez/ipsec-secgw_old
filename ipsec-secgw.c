@@ -1184,8 +1184,10 @@ void filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts,
       unsigned num = rte_kni_tx_burst(kni_port_params_array[0]->kni[0], &m, 1);
       if (num)
         kni_stats[0].rx_packets += num;
-      else
+      else {
         rte_pktmbuf_free(m);
+        kni_stats[0].rx_dropped++;
+      }
     } else {
       pkts_new[new_count++] = m;
     }
