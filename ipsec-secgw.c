@@ -2642,6 +2642,7 @@ static void signal_handler(int signum) {
     printf("\n\nSignal %d received, preparing to exit...\n", signum);
     force_quit = true;
     signal_handler_kni();
+    exit(1);
   }
 }
 
