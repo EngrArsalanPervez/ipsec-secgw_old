@@ -1,5 +1,4 @@
 #include "kni.h"
-#include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <inttypes.h>
@@ -26,7 +25,6 @@
 #include <rte_mempool.h>
 #include <rte_per_lcore.h>
 #include <rte_string_fns.h>
-#include <signal.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -35,6 +33,7 @@
 #include <sys/ioctl.h>
 #include <sys/queue.h>
 #include <unistd.h>
+
 #define RTE_LOGTYPE_APP RTE_LOGTYPE_USER1
 #define MAX_PACKET_SZ 2048
 #define MBUF_DATA_SZ (MAX_PACKET_SZ + RTE_PKTMBUF_HEADROOM)
@@ -253,82 +252,6 @@ void init_kni(void) {
   }
   rte_kni_init(num_of_kni_ports);
 }
-void init_port(uint16_t port) {
-  int ret;
-  uint16_t nb_rxd = NB_RXD;
-  uint16_t nb_txd = NB_TXD;
-  struct rte_eth_dev_info dev_info;
-  struct rte_eth_rxconf rxq_conf;
-  struct rte_eth_txconf txq_conf;
-  struct rte_eth_conf local_port_conf = port_conf;
-
-  /* Initialise device and RX/TX queues */
-  RTE_LOG(INFO, APP, "Initialising port %u ...\n", (unsigned)port);
-  fflush(stdout);
-
-  ret = rte_eth_dev_info_get(port, &dev_info);
-  if (ret != 0)
-    rte_exit(EXIT_FAILURE, "Error during getting device (port %u) info: %s\n",
-             port, strerror(-ret));
-
-  if (dev_info.tx_offload_capa & RTE_ETH_TX_OFFLOAD_MBUF_FAST_FREE)
-    local_port_conf.txmode.offloads |= RTE_ETH_TX_OFFLOAD_MBUF_FAST_FREE;
-  ret = rte_eth_dev_configure(port, 1, 1, &local_port_conf);
-  if (ret < 0)
-    rte_exit(EXIT_FAILURE, "Could not configure port%u (%d)\n", (unsigned)port,
-             ret);
-
-  ret = rte_eth_dev_adjust_nb_rx_tx_desc(port, &nb_rxd, &nb_txd);
-  if (ret < 0)
-    rte_exit(EXIT_FAILURE,
-             "Could not adjust number of descriptors "
-             "for port%u (%d)\n",
-             (unsigned)port, ret);
-
-  rxq_conf = dev_info.default_rxconf;
-  rxq_conf.offloads = local_port_conf.rxmode.offloads;
-  ret = rte_eth_rx_queue_setup(port, 0, nb_rxd, rte_eth_dev_socket_id(port),
-                               &rxq_conf, pktmbuf_pool);
-  if (ret < 0)
-    rte_exit(EXIT_FAILURE,
-             "Could not setup up RX queue for "
-             "port%u (%d)\n",
-             (unsigned)port, ret);
-
-  txq_conf = dev_info.default_txconf;
-  txq_conf.offloads = local_port_conf.txmode.offloads;
-  ret = rte_eth_tx_queue_setup(port, 0, nb_txd, rte_eth_dev_socket_id(port),
-                               &txq_conf);
-  if (ret < 0)
-    rte_exit(EXIT_FAILURE,
-             "Could not setup up TX queue for "
-             "port%u (%d)\n",
-             (unsigned)port, ret);
-
-  ret = rte_eth_dev_start(port);
-  if (ret < 0)
-    rte_exit(EXIT_FAILURE, "Could not start port%u (%d)\n", (unsigned)port,
-             ret);
-
-  if (promiscuous_on_kni) {
-    ret = rte_eth_promiscuous_enable(port);
-    if (ret != 0)
-      rte_exit(EXIT_FAILURE,
-               "Could not enable promiscuous mode for port%u: %s\n", port,
-               rte_strerror(-ret));
-  }
-}
-
-static void log_link_state(struct rte_kni *kni, int prev,
-                           struct rte_eth_link *link) {
-  char link_status_text[RTE_ETH_LINK_MAX_STR_LEN];
-  if (kni == NULL || link == NULL)
-    return;
-
-  rte_eth_link_to_str(link_status_text, sizeof(link_status_text), link);
-  if (prev != link->link_status)
-    RTE_LOG(INFO, APP, "%s NIC %s\n", rte_kni_get_name(kni), link_status_text);
-}
 
 int kni_change_mtu(uint16_t port_id, unsigned int new_mtu) {
   int ret;
@@ -535,12 +458,6 @@ int kni_alloc(uint16_t port_id) {
   }
 
   return 0;
-}
-
-void handle_kni_packet(struct rte_mbuf *buff) {
-  printf("Handling KNI packet of length: %d\n", buff->pkt_len);
-  // Free if not forwarding further
-  rte_pktmbuf_free(buff);
 }
 
 int kni_free_kni(uint16_t port_id) {
