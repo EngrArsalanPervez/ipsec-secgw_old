@@ -1,5 +1,4 @@
 #include "kni.h"
-#include "ipsec-secgw.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
