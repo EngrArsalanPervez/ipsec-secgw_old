@@ -598,6 +598,7 @@ int kni_main(struct rte_mempool *shared_pool) {
     kni_configured = 1;
 
     main_loop(NULL);
+    printf("config_kni:%s\n", config_kni);
   } else {
     while (kni_configured == 0) {
       sleep(1);
