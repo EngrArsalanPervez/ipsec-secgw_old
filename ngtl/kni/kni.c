@@ -1,4 +1,5 @@
 #include "kni.h"
+#include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <inttypes.h>
@@ -40,7 +41,7 @@
 #define NB_TXD 1024
 
 uint8_t kni_configured = 0;
-
+#define RTE_LOGTYPE_APP RTE_LOGTYPE_USER1
 struct kni_port_params *kni_port_params_array[RTE_MAX_ETHPORTS];
 uint32_t ports_mask = 0;
 int promiscuous_on_kni = 0;
