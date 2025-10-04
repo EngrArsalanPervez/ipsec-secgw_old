@@ -56,6 +56,8 @@
 #include "parser.h"
 #include "sad.h"
 
+#include "kni.h"
+
 volatile bool force_quit;
 
 #define MAX_JUMBO_PKT_LEN 9600
