@@ -353,6 +353,7 @@ static void print_stats_cb(__rte_unused void *param) {
   printf("\nKNI statistics =====================================");
   print_kni_stats();
 
+  printf("\n====================================================");
   rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);
 }
 
