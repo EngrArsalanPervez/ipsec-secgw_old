@@ -589,6 +589,7 @@ int kni_main(struct rte_mempool *shared_pool) {
 
     char config_kni[32] = {0};
     sprintf(config_kni, "(0,%d,%d,1)", KNI_CORE0, KNI_CORE1);
+    printf("config_kni:%s\n", config_kni);
     ret = parse_config_kni(config_kni);
     if (ret < 0)
       rte_exit(EXIT_FAILURE, "Invalid KNI config\n");
@@ -598,7 +599,6 @@ int kni_main(struct rte_mempool *shared_pool) {
     kni_configured = 1;
 
     main_loop(NULL);
-    printf("config_kni:%s\n", config_kni);
   } else {
     while (kni_configured == 0) {
       sleep(1);
