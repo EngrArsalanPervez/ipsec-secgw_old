@@ -946,6 +946,8 @@ int ipsec_launch_one_lcore(void *args) {
   unsigned int nb_lcores = rte_lcore_count();
   uint32_t lcore_id = rte_lcore_id();
 
+  printf("EUP:%u,%u\n", nb_lcores, lcore_id);
+
   if (lcore_id == (nb_lcores - 1) || lcore_id == (nb_lcores - 2)) {
     kni_main(socket_ctx[0].mbuf_pool);
   }

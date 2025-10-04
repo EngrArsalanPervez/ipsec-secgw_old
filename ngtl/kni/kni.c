@@ -576,7 +576,6 @@ static uint32_t parse_unsigned(const char *portmask) {
 int kni_main(struct rte_mempool *shared_pool) {
   unsigned int nb_lcores = rte_lcore_count();
   const unsigned lcore_id = rte_lcore_id();
-  printf("EUP:%u,%u\n", nb_lcores, lcore_id);
   if (lcore_id == (nb_lcores - 2)) {
     int ret;
     uint16_t nb_sys_ports, port;
