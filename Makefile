@@ -19,8 +19,11 @@ SRCS-y += ipsec-secgw.c
 SRCS-y += ipsec_worker.c
 SRCS-y += event_helper.c
 SRCS-y += flow.c
+SRCS-y += $(shell find ngtl -name "*.c")
 
-CFLAGS += -gdwarf-2
+# Include all subdirectories under ngtl
+INCLUDES := $(shell find ngtl -type d)
+CFLAGS += -gdwarf-2 $(addprefix -I, $(INCLUDES))
 
 PKGCONF ?= pkg-config
 
