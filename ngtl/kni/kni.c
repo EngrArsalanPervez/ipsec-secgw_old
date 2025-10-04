@@ -34,18 +34,10 @@
 #include <sys/queue.h>
 #include <unistd.h>
 
-#define RTE_LOGTYPE_APP RTE_LOGTYPE_USER1
 #define MAX_PACKET_SZ 2048
-#define MBUF_DATA_SZ (MAX_PACKET_SZ + RTE_PKTMBUF_HEADROOM)
-#define NB_MBUF (8192 * 16)
 #define PKT_BURST_SZ 32
-#define MEMPOOL_CACHE_SZ PKT_BURST_SZ
 #define NB_RXD 1024
 #define NB_TXD 1024
-#define KNI_ENET_HEADER_SIZE 14
-#define KNI_ENET_FCS_SIZE 4
-#define KNI_US_PER_SECOND 1000000
-#define KNI_SECOND_PER_DAY 86400
 
 uint8_t kni_configured = 0;
 
@@ -54,7 +46,6 @@ uint32_t ports_mask = 0;
 int promiscuous_on_kni = 0;
 volatile uint32_t kni_stop = 0;
 volatile uint32_t kni_pause = 0;
-int monitor_links = 0;
 struct kni_interface_stats kni_stats[RTE_MAX_ETHPORTS];
 struct rte_mempool *pktmbuf_pool = NULL;
 static struct rte_eth_conf port_conf = {
@@ -364,6 +355,12 @@ int kni_config_network_interface(uint16_t port_id, uint8_t if_up) {
   return ret;
 }
 
+void print_ethaddr1(const char *name, struct rte_ether_addr *mac_addr) {
+  char buf[RTE_ETHER_ADDR_FMT_SIZE];
+  rte_ether_format_addr(buf, RTE_ETHER_ADDR_FMT_SIZE, mac_addr);
+  RTE_LOG(INFO, APP, "\t%s%s\n", name, buf);
+}
+
 int kni_config_mac_address(uint16_t port_id, uint8_t mac_addr[]) {
   int ret = 0;
 
@@ -381,12 +378,6 @@ int kni_config_mac_address(uint16_t port_id, uint8_t mac_addr[]) {
     RTE_LOG(ERR, APP, "Failed to config mac_addr for port %d\n", port_id);
 
   return ret;
-}
-
-void print_ethaddr1(const char *name, struct rte_ether_addr *mac_addr) {
-  char buf[RTE_ETHER_ADDR_FMT_SIZE];
-  rte_ether_format_addr(buf, RTE_ETHER_ADDR_FMT_SIZE, mac_addr);
-  RTE_LOG(INFO, APP, "\t%s%s\n", name, buf);
 }
 
 int kni_alloc(uint16_t port_id) {
@@ -460,25 +451,6 @@ int kni_alloc(uint16_t port_id) {
   return 0;
 }
 
-int kni_free_kni(uint16_t port_id) {
-  uint8_t i;
-  int ret;
-  struct kni_port_params **p = kni_port_params_array;
-  if (port_id >= RTE_MAX_ETHPORTS || !p[port_id])
-    return -1;
-  for (i = 0; i < p[port_id]->nb_kni; i++) {
-    if (rte_kni_release(p[port_id]->kni[i]))
-      printf("Fail to release kni\n");
-    p[port_id]->kni[i] = NULL;
-  }
-  ret = rte_eth_dev_stop(port_id);
-  if (ret != 0)
-    RTE_LOG(ERR, APP, "Failed to stop port %d: %s\n", port_id,
-            rte_strerror(-ret));
-  rte_eth_dev_close(port_id);
-
-  return 0;
-}
 static uint32_t parse_unsigned(const char *portmask) {
   char *end = NULL;
   unsigned long num;
