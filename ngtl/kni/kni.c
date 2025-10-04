@@ -251,6 +251,7 @@ void init_kni(void) {
       num_of_kni_ports += (params[i]->nb_lcore_k ? params[i]->nb_lcore_k : 1);
     }
   }
+  printf("EUP:%u\n", num_of_kni_ports);
   rte_kni_init(num_of_kni_ports);
 }
 void init_port(uint16_t port) {
@@ -589,7 +590,6 @@ int kni_main(struct rte_mempool *shared_pool) {
 
     char config_kni[32] = {0};
     sprintf(config_kni, "(0,%d,%d,1)", KNI_CORE0, KNI_CORE1);
-    printf("config_kni:%s\n", config_kni);
     ret = parse_config_kni(config_kni);
     if (ret < 0)
       rte_exit(EXIT_FAILURE, "Invalid KNI config\n");
