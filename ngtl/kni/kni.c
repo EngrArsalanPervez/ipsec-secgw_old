@@ -574,8 +574,10 @@ static uint32_t parse_unsigned(const char *portmask) {
 }
 
 int kni_main(struct rte_mempool *shared_pool) {
+  unsigned int nb_lcores = rte_lcore_count();
   const unsigned lcore_id = rte_lcore_id();
-  if (lcore_id == KNI_CORE0) {
+  printf("EUP:%u,%u\n", nb_lcores, lcore_id);
+  if (lcore_id == (nb_lcores - 2)) {
     int ret;
     uint16_t nb_sys_ports, port;
     if (shared_pool == NULL) {
@@ -588,7 +590,7 @@ int kni_main(struct rte_mempool *shared_pool) {
     promiscuous_on_kni = 1;
 
     char config_kni[32] = {0};
-    sprintf(config_kni, "(0,%d,%d,1)", KNI_CORE0, KNI_CORE1);
+    sprintf(config_kni, "(0,%d,%d,1)", (nb_lcores-2), (nb_lcores-1);
     ret = parse_config_kni(config_kni);
     if (ret < 0)
       rte_exit(EXIT_FAILURE, "Invalid KNI config\n");
