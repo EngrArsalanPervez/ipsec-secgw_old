@@ -575,7 +575,7 @@ static uint32_t parse_unsigned(const char *portmask) {
 
 int kni_main(struct rte_mempool *shared_pool) {
   const unsigned lcore_id = rte_lcore_id();
-  if (lcore_id == 2) {
+  if (lcore_id == KNI_CORE0) {
     int ret;
     uint16_t nb_sys_ports, port;
     if (shared_pool == NULL) {
