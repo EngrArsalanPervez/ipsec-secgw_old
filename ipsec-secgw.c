@@ -47,7 +47,9 @@
 #include <rte_prefetch.h>
 #include <rte_random.h>
 #include <rte_security.h>
+#include <rte_tcp.h>
 #include <rte_telemetry.h>
+#include <rte_udp.h>
 
 #include "event_helper.h"
 #include "flow.h"
@@ -57,6 +59,8 @@
 #include "sad.h"
 
 #include "kni.h"
+
+extern struct kni_port_params *kni_port_params_array[RTE_MAX_ETHPORTS];
 
 volatile bool force_quit;
 
