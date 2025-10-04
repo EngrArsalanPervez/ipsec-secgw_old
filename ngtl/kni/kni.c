@@ -69,7 +69,6 @@ void signal_handler_kni(void) {
   __atomic_fetch_add(&kni_stop, 1, __ATOMIC_RELAXED);
   return;
 }
-}
 
 void kni_burst_free_mbufs(struct rte_mbuf **pkts, unsigned num) {
   unsigned i;
