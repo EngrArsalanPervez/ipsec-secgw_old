@@ -59,7 +59,8 @@
 #include "sad.h"
 
 #include "kni.h"
-
+#define UNPROTECTED_PORT 0
+extern struct kni_interface_stats kni_stats[RTE_MAX_ETHPORTS];
 extern struct kni_port_params *kni_port_params_array[RTE_MAX_ETHPORTS];
 
 volatile bool force_quit;
@@ -1150,6 +1151,47 @@ static void drain_outbound_crypto_queues(const struct lcore_conf *qconf,
     route6_pkts(qconf->rt6_ctx, trf.ip6.pkts, trf.ip6.num);
 }
 
+void filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts,
+                        int32_t *nb_rx_new, struct rte_mbuf **pkts_new) {
+  int32_t i, new_count = 0;
+  struct rte_mbuf *m;
+
+  for (i = 0; i < nb_rx; i++) {
+    m = pkts[i];
+    struct rte_ether_hdr *eth = rte_pktmbuf_mtod(m, struct rte_ether_hdr *);
+
+    if (rte_be_to_cpu_16(eth->ether_type) != RTE_ETHER_TYPE_IPV4) {
+      pkts_new[new_count++] = m;
+      continue;
+    }
+
+    struct rte_ipv4_hdr *ip = (struct rte_ipv4_hdr *)(eth + 1);
+
+    if ((ip->version_ihl >> 4) != 4 || ip->next_proto_id != IPPROTO_UDP) {
+      pkts_new[new_count++] = m;
+      continue;
+    }
+
+    uint16_t ip_hdr_len = (ip->version_ihl & 0x0f) * 4;
+    struct rte_udp_hdr *udp = (struct rte_udp_hdr *)((char *)ip + ip_hdr_len);
+
+    uint16_t sport = rte_be_to_cpu_16(udp->src_port);
+    uint16_t dport = rte_be_to_cpu_16(udp->dst_port);
+
+    if (sport == 500 || dport == 500 || sport == 4500 || dport == 4500) {
+      unsigned num = rte_kni_tx_burst(kni_port_params_array[0]->kni[0], &m, 1);
+      if (num)
+        kni_stats[0].rx_packets += num;
+      else
+        rte_pktmbuf_free(m);
+    } else {
+      pkts_new[new_count++] = m;
+    }
+  }
+
+  *nb_rx_new = new_count;
+}
+
 /* main processing loop */
 void ipsec_poll_mode_worker(void) {
   struct rte_mbuf *pkts[MAX_PKT_BURST];
@@ -1228,6 +1270,13 @@ void ipsec_poll_mode_worker(void) {
       nb_rx = rte_eth_rx_burst(portid, queueid, pkts, MAX_PKT_BURST);
 
       if (nb_rx > 0) {
+        if (portid != UNPROTECTED_PORT) {
+          struct rte_mbuf *pkts_new[MAX_PKT_BURST];
+          int32_t nb_rx_new = 0;
+          filter_ike_packets(nb_rx, pkts, &nb_rx_new, pkts_new);
+          memcpy(pkts, pkts_new, sizeof(pkts_new));
+          nb_rx = nb_rx_new;
+        }
         core_stats_update_rx(nb_rx);
         process_pkts(qconf, pkts, nb_rx, portid);
       }
@@ -2592,6 +2641,7 @@ static void signal_handler(int signum) {
   if (signum == SIGINT || signum == SIGTERM) {
     printf("\n\nSignal %d received, preparing to exit...\n", signum);
     force_quit = true;
+    signal_handler_kni();
   }
 }
 

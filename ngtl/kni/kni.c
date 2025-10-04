@@ -65,14 +65,10 @@ static struct rte_eth_conf port_conf = {
         },
 };
 
-void signal_handler_kni(int signum) {
-
-  if (signum == SIGINT || signum == SIGTERM) {
-    printf("\nSIGRTMIN/SIGINT/SIGTERM received. "
-           "KNI processing stopping.\n");
-    __atomic_fetch_add(&kni_stop, 1, __ATOMIC_RELAXED);
-    return;
-  }
+void signal_handler_kni(void) {
+  __atomic_fetch_add(&kni_stop, 1, __ATOMIC_RELAXED);
+  return;
+}
 }
 
 void kni_burst_free_mbufs(struct rte_mbuf **pkts, unsigned num) {
@@ -101,18 +97,6 @@ void kni_ingress(struct kni_port_params *p) {
   nb_kni = p->nb_kni;
   port_id = p->port_id;
   for (i = 0; i < nb_kni; i++) {
-    /* Burst rx from eth */
-    // nb_rx = rte_eth_rx_burst(port_id, 0, pkts_burst, PKT_BURST_SZ);
-    // if (unlikely(nb_rx > PKT_BURST_SZ))
-    // {
-    // 	RTE_LOG(ERR, APP, "Error receiving from eth\n");
-    // 	return;
-    // }
-    /* Burst tx to kni */
-    // num = rte_kni_tx_burst(p->kni[i], pkts_burst, nb_rx);
-    // if (num)
-    // 	kni_stats[port_id].rx_packets += num;
-
     rte_kni_handle_request(p->kni[i]);
     if (unlikely(num < nb_rx)) {
       /* Free mbufs not tx to kni interface */
@@ -141,11 +125,6 @@ void kni_egress(struct kni_port_params *p) {
       RTE_LOG(ERR, APP, "Error receiving from KNI\n");
       return;
     }
-
-    // for (uint16_t j = 0; j < num; j++)
-    // {
-    // 	handle_kni_packet(pkts_burst[j]);
-    // }
     /* Burst tx to eth */
     nb_tx = rte_eth_tx_burst(1, 1, pkts_burst, (uint16_t)num);
     if (nb_tx)
@@ -608,23 +587,11 @@ int kni_main(struct rte_mempool *shared_pool) {
     init_kni();
     ports_mask = parse_unsigned("0x1");
     promiscuous_on_kni = 1;
-    ret = parse_config_kni("(0,2,3,1)");
+    ret = parse_config_kni("(0,6,7,1)");
     if (ret < 0)
       rte_exit(EXIT_FAILURE, "Invalid KNI config\n");
 
-    // nb_sys_ports = rte_eth_dev_count_avail();
-    // if (nb_sys_ports == 0)
-    //     rte_exit(EXIT_FAILURE, "No Ethernet ports - bye\n");
-    // RTE_ETH_FOREACH_DEV(port) {
-    // if (!(ports_mask & (1 << port)))
-    //     continue;
-    // kni_alloc(port);
-    // }
-
     kni_alloc(0);
-    // check_all_ports_link_status(ports_mask);
-
-    // rte_eal_remote_launch(main_loop, NULL, 3);
 
     kni_configured = 1;
 

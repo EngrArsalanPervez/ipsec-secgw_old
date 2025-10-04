@@ -11,6 +11,7 @@
 #include "ipsec-secgw.h"
 #include "ipsec.h"
 #include "ipsec_worker.h"
+#include "kni.h"
 
 struct port_drv_mode_data {
   struct rte_security_session *sess;
@@ -942,6 +943,12 @@ static void ipsec_eventmode_worker(struct eh_conf *conf) {
 }
 
 int ipsec_launch_one_lcore(void *args) {
+  uint32_t lcore_id = rte_lcore_id();
+
+  if (lcore_id == 6 || lcore_id == 7) {
+    kni_main(socket_ctx[0].mbuf_pool);
+  }
+
   struct eh_conf *conf;
 
   conf = (struct eh_conf *)args;
