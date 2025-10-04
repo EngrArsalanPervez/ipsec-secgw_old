@@ -349,8 +349,8 @@ static void print_stats_cb(__rte_unused void *param) {
          "\nTotal packets sent: %18" PRIu64
          "\nTotal packets dropped: %15" PRIu64,
          total_packets_rx, total_packets_tx, total_packets_dropped);
-  printf("\n====================================================\n");
 
+  printf("\nKNI statistics =====================================\n");
   print_kni_stats();
 
   rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);
