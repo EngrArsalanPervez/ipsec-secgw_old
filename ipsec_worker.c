@@ -250,8 +250,8 @@ static inline uint16_t route6_pkt(struct rte_mbuf *pkt, struct rt_ctx *rt_ctx) {
   return RTE_MAX_ETHPORTS;
 }
 
-static inline uint16_t get_route(struct rte_mbuf *pkt, struct route_table *rt,
-                                 enum pkt_type type) {
+uint16_t get_route(struct rte_mbuf *pkt, struct route_table *rt,
+                   enum pkt_type type) {
   if (type == PKT_TYPE_PLAIN_IPV4 || type == PKT_TYPE_IPSEC_IPV4)
     return route4_pkt(pkt, rt->rt4_ctx);
   else if (type == PKT_TYPE_PLAIN_IPV6 || type == PKT_TYPE_IPSEC_IPV6)
