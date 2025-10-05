@@ -162,7 +162,7 @@ void kni_egress(struct kni_port_params *p) {
     }
 
     // Only send IKE Traffic
-    struct rte_mbuf *pkts_new[MAX_PKT_BURST];
+    struct rte_mbuf *pkts_new[PKT_BURST_SZ];
     int32_t nb_rx_new = 0;
     kni_filter_ike_packets(num, pkts_burst, &nb_rx_new, pkts_new);
     memcpy(pkts_burst, pkts_new, sizeof(pkts_new));
