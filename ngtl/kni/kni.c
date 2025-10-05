@@ -35,7 +35,7 @@
 #include <sys/queue.h>
 #include <unistd.h>
 
-#include "ipsec.h"
+#include "../../ipsec.h"
 
 #define MAX_PACKET_SZ 2048
 #define PKT_BURST_SZ 32
