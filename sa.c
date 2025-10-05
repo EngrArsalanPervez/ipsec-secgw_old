@@ -25,7 +25,7 @@
 #include "esp.h"
 #include "ipsec.h"
 #include "parser.h"
-#include "sa.h"
+/* #include "sa.h" */
 #include "sad.h"
 
 #define IPDEFTTL 64
