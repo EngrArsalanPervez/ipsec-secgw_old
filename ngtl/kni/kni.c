@@ -106,7 +106,8 @@ void kni_ingress(struct kni_port_params *p) {
   }
 }
 
-void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts) {
+void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts,
+                            uint16_t port_id, struct route_table *rt) {
   int32_t i;
   struct rte_mbuf *m;
 
@@ -135,14 +136,10 @@ void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts) {
     if (sport == 500 || dport == 500 || sport == 4500 || dport == 4500) {
       // Send Out
 
-      struct route_table rt;
-      rt.rt4_ctx = socket_ctx[0 /*socket_id*/].rt_ip4;
-      rt.rt6_ctx = socket_ctx[0 /*socket_id*/].rt_ip6;
-
-      uint16_t port_id = get_route(m, &rt, PKT_TYPE_PLAIN_IPV4);
+      uint16_t tunnel_port = get_route(m, rt, PKT_TYPE_PLAIN_IPV4);
 
       /* Burst tx to eth */
-      uint8_t nb_tx = rte_eth_tx_burst(port_id, 1, &m, 1);
+      uint8_t nb_tx = rte_eth_tx_burst(tunnel_port, 1, &m, 1);
       if (nb_tx)
         kni_stats[port_id].tx_packets += nb_tx;
       if (unlikely(nb_tx < 1)) {
@@ -159,7 +156,7 @@ void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts) {
 }
 
 // rx from kni, tx to eth
-void kni_egress(struct kni_port_params *p) {
+void kni_egress(struct kni_port_params *p, struct route_table *rt) {
   uint8_t i;
   uint16_t port_id;
   unsigned nb_tx, num;
@@ -180,7 +177,7 @@ void kni_egress(struct kni_port_params *p) {
     }
 
     // Only send IKE Traffic
-    kni_filter_ike_packets(num, pkts_burst);
+    kni_filter_ike_packets(num, pkts_burst, port_id, rt);
   }
 }
 
@@ -203,6 +200,10 @@ int main_loop(void *arg) {
       break;
     }
   }
+
+  struct route_table rt;
+  rt.rt4_ctx = socket_ctx[0 /*socket_id*/].rt_ip4;
+  rt.rt6_ctx = socket_ctx[0 /*socket_id*/].rt_ip6;
 
   if (flag == LCORE_RX) {
     RTE_LOG(INFO, APP, "Lcore %u is reading from port %d\n",
@@ -228,7 +229,7 @@ int main_loop(void *arg) {
         break;
       if (f_pause)
         continue;
-      kni_egress(kni_port_params_array[i]);
+      kni_egress(kni_port_params_array[i], &rt);
     }
   } else
     RTE_LOG(INFO, APP, "Lcore %u has nothing to do\n", lcore_id);
