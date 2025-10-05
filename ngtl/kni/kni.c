@@ -165,9 +165,8 @@ void kni_egress(struct kni_port_params *p) {
     struct rte_mbuf *pkts_new[PKT_BURST_SZ];
     int32_t nb_rx_new = 0;
     kni_filter_ike_packets(num, pkts_burst, &nb_rx_new, pkts_new);
-    memcpy(pkts_burst, pkts_new, sizeof(pkts_new));
+    memcpy(pkts_burst, pkts_new, nb_rx_new * sizeof(struct rte_mbuf *));
     num = nb_rx_new;
-
     /* Burst tx to eth */
     nb_tx = rte_eth_tx_burst(TUNNEL_PORT, 1, pkts_burst, (uint16_t)num);
     if (nb_tx)
