@@ -106,9 +106,8 @@ void kni_ingress(struct kni_port_params *p) {
   }
 }
 
-void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts,
-                            int32_t *nb_rx_new, struct rte_mbuf **pkts_new) {
-  int32_t i, new_count = 0;
+void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts) {
+  int32_t i;
   struct rte_mbuf *m;
 
   for (i = 0; i < nb_rx; i++) {
@@ -134,13 +133,25 @@ void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts,
     uint16_t dport = rte_be_to_cpu_16(udp->dst_port);
 
     if (sport == 500 || dport == 500 || sport == 4500 || dport == 4500) {
-      pkts_new[new_count++] = m;
+      // Send Out
+      uint16_t port_id =
+          get_route(m, socket_ctx[0 /*socket_id*/].rt_ip4, PKT_TYPE_PLAIN_IPV4);
+
+      /* Burst tx to eth */
+      uint8_t nb_tx = rte_eth_tx_burst(port_id, 1, &m, 1);
+      if (nb_tx)
+        kni_stats[port_id].tx_packets += nb_tx;
+      if (unlikely(nb_tx < 1)) {
+        /* Free mbufs not tx to NIC */
+        kni_burst_free_mbufs(&m, 1);
+        kni_stats[port_id].tx_dropped += 1;
+      }
+
     } else {
       rte_pktmbuf_free(m);
+      continue;
     }
   }
-
-  *nb_rx_new = new_count;
 }
 
 // rx from kni, tx to eth
@@ -165,27 +176,7 @@ void kni_egress(struct kni_port_params *p) {
     }
 
     // Only send IKE Traffic
-    struct rte_mbuf *pkts_new[PKT_BURST_SZ];
-    int32_t nb_rx_new = 0;
-    kni_filter_ike_packets(num, pkts_burst, &nb_rx_new, pkts_new);
-    memcpy(pkts_burst, pkts_new, nb_rx_new * sizeof(struct rte_mbuf *));
-    num = nb_rx_new;
-
-    port_id = get_route(pkt, rt, type);
-    if (unlikely(port_id == RTE_MAX_ETHPORTS)) {
-      /* no match */
-      goto drop_pkt_and_exit;
-    }
-
-    /* Burst tx to eth */
-    nb_tx = rte_eth_tx_burst(TUNNEL_PORT, 1, pkts_burst, (uint16_t)num);
-    if (nb_tx)
-      kni_stats[port_id].tx_packets += nb_tx;
-    if (unlikely(nb_tx < num)) {
-      /* Free mbufs not tx to NIC */
-      kni_burst_free_mbufs(&pkts_burst[nb_tx], num - nb_tx);
-      kni_stats[port_id].tx_dropped += num - nb_tx;
-    }
+    kni_filter_ike_packets(num, pkts_burst);
   }
 }
 
