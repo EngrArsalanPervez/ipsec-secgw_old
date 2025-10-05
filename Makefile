@@ -55,11 +55,13 @@ endif
 CFLAGS += -DALLOW_EXPERIMENTAL_API
 CFLAGS += -Wno-address-of-packed-member
 
+LDFLAGS_EXTRA = -lcjson -lnats -lpthread -lssl -lcrypto
+
 build/$(APP)-shared: $(SRCS-y) Makefile $(PC_FILE) | build
-	$(CC) $(CFLAGS) $(SRCS-y) -o $@ $(LDFLAGS) $(LDFLAGS_SHARED)
+	$(CC) $(CFLAGS) $(SRCS-y) -o $@ $(LDFLAGS) $(LDFLAGS_SHARED) $(LDFLAGS_SHARED)
 
 build/$(APP)-static: $(SRCS-y) Makefile $(PC_FILE) | build
-	$(CC) $(CFLAGS) $(SRCS-y) -o $@ $(LDFLAGS) $(LDFLAGS_STATIC)
+	$(CC) $(CFLAGS) $(SRCS-y) -o $@ $(LDFLAGS) $(LDFLAGS_STATIC) $(LDFLAGS_SHARED)
 
 build:
 	@mkdir -p $@
