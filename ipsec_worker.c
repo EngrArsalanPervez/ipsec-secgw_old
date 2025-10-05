@@ -944,7 +944,6 @@ static void ipsec_eventmode_worker(struct eh_conf *conf) {
 }
 
 int ipsec_launch_one_lcore(void *args) {
-  unsigned int nb_lcores = rte_lcore_count();
   uint32_t lcore_id = rte_lcore_id();
 
   if (lcore_id == KNI_RX_CORE || lcore_id == KNI_TX_CORE) {
