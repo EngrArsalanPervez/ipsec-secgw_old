@@ -35,6 +35,8 @@
 #include <sys/queue.h>
 #include <unistd.h>
 
+#include "ipsec.h"
+
 #define MAX_PACKET_SZ 2048
 #define PKT_BURST_SZ 32
 #define NB_RXD 1024
@@ -167,6 +169,13 @@ void kni_egress(struct kni_port_params *p) {
     kni_filter_ike_packets(num, pkts_burst, &nb_rx_new, pkts_new);
     memcpy(pkts_burst, pkts_new, nb_rx_new * sizeof(struct rte_mbuf *));
     num = nb_rx_new;
+
+    port_id = get_route(pkt, rt, type);
+    if (unlikely(port_id == RTE_MAX_ETHPORTS)) {
+      /* no match */
+      goto drop_pkt_and_exit;
+    }
+
     /* Burst tx to eth */
     nb_tx = rte_eth_tx_burst(TUNNEL_PORT, 1, pkts_burst, (uint16_t)num);
     if (nb_tx)
