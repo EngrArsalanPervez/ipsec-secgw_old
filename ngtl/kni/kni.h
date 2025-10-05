@@ -15,9 +15,11 @@
 #if IP_ENCRYPTOR_TYPE == HCLOSE
 #define CLIENT_PORT 0
 #define TUNNEL_PORT 1
+#define vEth0_0_MAC {0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0}
 #elif IP_ENCRYPTOR_TYPE == LCLOSE
 #define CLIENT_PORT 1
 #define TUNNEL_PORT 0
+#define vEth0_0_MAC {0xa1, 0xb1, 0xc1, 0xd1, 0xe1, 0xf1}
 #endif
 
 /* Max kernels threads per port */
