@@ -1,5 +1,5 @@
-#ifndef SA_H
-#define SA_H
+#ifndef NATS_SA_H
+#define NATS_SA_H
 
 void print_all_sa_rules(void);
 
