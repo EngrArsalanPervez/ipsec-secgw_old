@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 extern char ike_string[2][1024];
 extern char ike_string_count;
 
