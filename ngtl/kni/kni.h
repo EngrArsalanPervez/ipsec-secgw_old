@@ -7,6 +7,19 @@
 #include <rte_mempool.h>
 #include <stdint.h>
 
+#define HCLOSE 0
+#define LCLOSE 1
+
+#define IP_ENCRYPTOR_TYPE HCLOSE
+
+#if IP_ENCRYPTOR_TYPE == HCLOSE
+#define CLIENT_PORT 0
+#define TUNNEL_PORT 3
+#elif IP_ENCRYPTOR_TYPE == LCLOSE
+#define CLIENT_PORT 1
+#define TUNNEL_PORT 0
+#endif
+
 /* Max kernels threads per port */
 #define KNI_MAX_KTHREAD 32
 

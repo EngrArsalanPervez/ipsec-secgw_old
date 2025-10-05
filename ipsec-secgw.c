@@ -59,7 +59,6 @@
 #include "sad.h"
 
 #include "kni.h"
-#define UNPROTECTED_PORT 0
 extern struct kni_interface_stats kni_stats[RTE_MAX_ETHPORTS];
 extern struct kni_port_params *kni_port_params_array[RTE_MAX_ETHPORTS];
 
@@ -1275,7 +1274,7 @@ void ipsec_poll_mode_worker(void) {
       nb_rx = rte_eth_rx_burst(portid, queueid, pkts, MAX_PKT_BURST);
 
       if (nb_rx > 0) {
-        if (portid != UNPROTECTED_PORT) {
+        if (portid != CLIENT_PORT) {
           struct rte_mbuf *pkts_new[MAX_PKT_BURST];
           int32_t nb_rx_new = 0;
           filter_ike_packets(nb_rx, pkts, &nb_rx_new, pkts_new);

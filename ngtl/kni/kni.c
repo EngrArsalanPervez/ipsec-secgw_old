@@ -169,7 +169,7 @@ void kni_egress(struct kni_port_params *p) {
     num = nb_rx_new;
 
     /* Burst tx to eth */
-    nb_tx = rte_eth_tx_burst(3, 1, pkts_burst, (uint16_t)num);
+    nb_tx = rte_eth_tx_burst(TUNNEL_PORT, 1, pkts_burst, (uint16_t)num);
     if (nb_tx)
       kni_stats[port_id].tx_packets += nb_tx;
     if (unlikely(nb_tx < num)) {
