@@ -1,0 +1,20 @@
+/etc/ipsec.conf
+
+conn HQ
+    auto=start
+    type=tunnel
+    keyexchange=ikev2
+    left=1.1.1.1
+    leftid=@HQ
+    leftauth=psk
+    right=1.1.1.2
+    rightid=@Branch
+    rightauth=psk
+    ike=aes128-sha256-modp2048
+    esp=aes128-sha256
+    lifetime=45m
+
+
+/etc/ipsec.secrets
+
+@HQ @Branch : PSK "network"
