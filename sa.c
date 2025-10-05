@@ -1029,42 +1029,6 @@ static struct sa_ctx *sa_create(const char *name, int32_t socket_id,
   return sa_ctx;
 }
 
-/**
- * @brief Prints all configured inbound and outbound Security Association (SA)
- * rules.
- *
- * This function iterates through the global arrays for both inbound and
- * outbound SA rules (`sa_in` and `sa_out`) and calls the `print_one_sa_rule`
- * helper function for each entry. It provides a consolidated view of the entire
- * security policy loaded from the configuration.
- */
-void print_all_sa_rules(void) {
-  uint32_t i;
-
-  printf("--- Inbound SA Rules ---\n");
-  if (nb_sa_in == 0) {
-    printf("No inbound SA rules configured.\n");
-  } else {
-    /* Iterate through all inbound SA rules and print them */
-    for (i = 0; i < nb_sa_in; i++) {
-      /* The second argument '1' indicates an inbound rule */
-      print_one_sa_rule(&sa_in[i], 1);
-    }
-  }
-
-  printf("\n--- Outbound SA Rules ---\n");
-  if (nb_sa_out == 0) {
-    printf("No outbound SA rules configured.\n");
-  } else {
-    /* Iterate through all outbound SA rules and print them */
-    for (i = 0; i < nb_sa_out; i++) {
-      /* The second argument '0' indicates an outbound rule */
-      print_one_sa_rule(&sa_out[i], 0);
-    }
-  }
-  printf("\n");
-}
-
 static int check_eth_dev_caps(uint16_t portid, uint32_t inbound, uint32_t tso) {
   struct rte_eth_dev_info dev_info;
   int retval;
@@ -1756,3 +1720,39 @@ void sa_sort_arr(void) {
 }
 
 uint32_t get_nb_crypto_sessions(void) { return nb_crypto_sessions; }
+
+/**
+ * @brief Prints all configured inbound and outbound Security Association (SA)
+ * rules.
+ *
+ * This function iterates through the global arrays for both inbound and
+ * outbound SA rules (`sa_in` and `sa_out`) and calls the `print_one_sa_rule`
+ * helper function for each entry. It provides a consolidated view of the entire
+ * security policy loaded from the configuration.
+ */
+void print_all_sa_rules(void) {
+  uint32_t i;
+
+  printf("--- Inbound SA Rules ---\n");
+  if (nb_sa_in == 0) {
+    printf("No inbound SA rules configured.\n");
+  } else {
+    /* Iterate through all inbound SA rules and print them */
+    for (i = 0; i < nb_sa_in; i++) {
+      /* The second argument '1' indicates an inbound rule */
+      print_one_sa_rule(&sa_in[i], 1);
+    }
+  }
+
+  printf("\n--- Outbound SA Rules ---\n");
+  if (nb_sa_out == 0) {
+    printf("No outbound SA rules configured.\n");
+  } else {
+    /* Iterate through all outbound SA rules and print them */
+    for (i = 0; i < nb_sa_out; i++) {
+      /* The second argument '0' indicates an outbound rule */
+      print_one_sa_rule(&sa_out[i], 0);
+    }
+  }
+  printf("\n");
+}
