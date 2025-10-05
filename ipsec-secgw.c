@@ -59,6 +59,7 @@
 #include "sad.h"
 
 #include "kni.h"
+#include "sub.h"
 extern struct kni_interface_stats kni_stats[RTE_MAX_ETHPORTS];
 extern struct kni_port_params *kni_port_params_array[RTE_MAX_ETHPORTS];
 
@@ -3277,6 +3278,12 @@ int32_t main(int32_t argc, char **argv) {
 
   check_all_ports_link_status(enabled_port_mask);
 
+  // NATS-Sub
+  pthread_t sub_tid;
+  if (pthread_create(&sub_tid, NULL, subscriber_thread, NULL) != 0) {
+    rte_exit(EXIT_FAILURE, "Failed to create subscriber pthread\n");
+  }
+
   if (stats_interval > 0)
     rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);
   else
@@ -3288,6 +3295,9 @@ int32_t main(int32_t argc, char **argv) {
     if (rte_eal_wait_lcore(lcore_id) < 0)
       return -1;
   }
+
+  // NATS-Sub
+  pthread_join(sub_tid, NULL);
 
   /* Uninitialize eventmode components */
   ret = eh_devs_uninit(eh_conf);
