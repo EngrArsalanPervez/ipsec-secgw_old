@@ -102,6 +102,44 @@ void kni_ingress(struct kni_port_params *p) {
     }
   }
 }
+
+void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts,
+                            int32_t *nb_rx_new, struct rte_mbuf **pkts_new) {
+  int32_t i, new_count = 0;
+  struct rte_mbuf *m;
+
+  for (i = 0; i < nb_rx; i++) {
+    m = pkts[i];
+    struct rte_ether_hdr *eth = rte_pktmbuf_mtod(m, struct rte_ether_hdr *);
+
+    if (rte_be_to_cpu_16(eth->ether_type) != RTE_ETHER_TYPE_IPV4) {
+      rte_pktmbuf_free(m);
+      continue;
+    }
+
+    struct rte_ipv4_hdr *ip = (struct rte_ipv4_hdr *)(eth + 1);
+
+    if ((ip->version_ihl >> 4) != 4 || ip->next_proto_id != IPPROTO_UDP) {
+      rte_pktmbuf_free(m);
+      continue;
+    }
+
+    uint16_t ip_hdr_len = (ip->version_ihl & 0x0f) * 4;
+    struct rte_udp_hdr *udp = (struct rte_udp_hdr *)((char *)ip + ip_hdr_len);
+
+    uint16_t sport = rte_be_to_cpu_16(udp->src_port);
+    uint16_t dport = rte_be_to_cpu_16(udp->dst_port);
+
+    if (sport == 500 || dport == 500 || sport == 4500 || dport == 4500) {
+      pkts_new[new_count++] = m;
+    } else {
+      rte_pktmbuf_free(m);
+    }
+  }
+
+  *nb_rx_new = new_count;
+}
+
 // rx from kni, tx to eth
 void kni_egress(struct kni_port_params *p) {
   uint8_t i;
@@ -124,6 +162,11 @@ void kni_egress(struct kni_port_params *p) {
     }
 
     // Only send IKE Traffic
+    struct rte_mbuf *pkts_new[MAX_PKT_BURST];
+    int32_t nb_rx_new = 0;
+    kni_filter_ike_packets(num, pkts_burst, &nb_rx_new, pkts_new);
+    memcpy(pkts_burst, pkts_new, sizeof(pkts_new));
+    num = nb_rx_new;
 
     /* Burst tx to eth */
     nb_tx = rte_eth_tx_burst(3, 1, pkts_burst, (uint16_t)num);
