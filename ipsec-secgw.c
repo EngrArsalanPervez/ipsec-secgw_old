@@ -62,6 +62,8 @@
 #include "sub.h"
 extern struct kni_interface_stats kni_stats[RTE_MAX_ETHPORTS];
 extern struct kni_port_params *kni_port_params_array[RTE_MAX_ETHPORTS];
+char ike_string[2][1024];
+uint8_t ike_string_count = 0;
 
 volatile bool force_quit;
 
