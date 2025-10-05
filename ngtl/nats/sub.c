@@ -12,7 +12,7 @@
 extern char ike_string[2][1024];
 extern char ike_string_count;
 
-static volatile int running = 1;
+volatile int nats_running = 1;
 
 static void parse_json_message(const char *json) {
   cJSON *root = cJSON_Parse(json);
@@ -50,16 +50,12 @@ void onMsg(natsConnection *conn, natsSubscription *sub, natsMsg *msg,
   natsMsg_Destroy(msg);
 }
 
-void handle_sigint(int sig) { running = 0; }
-
 void *subscriber_thread(void *arg) {
   natsConnection *conn = NULL;
   natsOptions *opts = NULL;
   natsSubscription *sub = NULL;
   natsStatus s;
   const char *subject = "foo";
-
-  signal(SIGINT, handle_sigint);
 
   if ((s = natsOptions_Create(&opts)) != NATS_OK)
     goto cleanup;
