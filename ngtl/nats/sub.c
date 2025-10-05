@@ -85,7 +85,7 @@ void *subscriber_thread(void *arg) {
   printf("Subscribed to subject '%s' inside pthread. Press Ctrl+C to exit.\n",
          subject);
 
-  while (running) {
+  while (nats_running) {
     nats_Sleep(100);
   }
 
