@@ -1,20 +1,66 @@
-/etc/ipsec.conf
 
-conn HQ
+# ==================================
+# StrongSwan Configuration - HQ Side
+# ==================================
+
+config setup
+    charondebug="ike 1, knl 1, cfg 0"
+    uniqueids=no
+
+# -------- Branch 1 Tunnel (10.10.10.x) --------
+conn Branch1
     auto=start
     type=tunnel
     keyexchange=ikev2
     left=10.10.10.1
-    leftid=@HQ
+    leftid=@HQ10
     leftauth=psk
     right=10.10.10.2
-    rightid=@Branch
+    rightid=@Branch10
+    rightauth=psk
+    ike=aes128-sha256-modp2048
+    esp=aes128-sha256
+    lifetime=45m
+
+# -------- Branch 2 Tunnel (20.20.20.x) --------
+conn Branch2
+    auto=start
+    type=tunnel
+    keyexchange=ikev2
+    left=20.20.20.1
+    leftid=@HQ20
+    leftauth=psk
+    right=20.20.20.2
+    rightid=@Branch20
+    rightauth=psk
+    ike=aes128-sha256-modp2048
+    esp=aes128-sha256
+    lifetime=45m
+
+# -------- Branch 3 Tunnel (30.30.30.x) --------
+conn Branch3
+    auto=start
+    type=tunnel
+    keyexchange=ikev2
+    left=30.30.30.1
+    leftid=@HQ30
+    leftauth=psk
+    right=30.30.30.2
+    rightid=@Branch30
     rightauth=psk
     ike=aes128-sha256-modp2048
     esp=aes128-sha256
     lifetime=45m
 
 
-/etc/ipsec.secrets
 
-@HQ @Branch : PSK "network"
+
+
+# /etc/ipsec.secrets - HQ Side
+
+@HQ10 @Branch10 : PSK "network"
+@HQ20 @Branch20 : PSK "network"
+@HQ30 @Branch30 : PSK "network"
+
+
+

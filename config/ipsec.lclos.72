@@ -1,0 +1,33 @@
+/etc/ipsec.conf
+
+
+
+# ===========================
+# StrongSwan - Branch 2
+# ===========================
+
+config setup
+    charondebug="ike 1, knl 1, cfg 0"
+    uniqueids=no
+
+conn HQ
+    auto=start
+    type=tunnel
+    keyexchange=ikev2
+    left=20.20.20.2
+    leftid=@Branch20
+    leftauth=psk
+    right=20.20.20.1
+    rightid=@HQ20
+    rightauth=psk
+    ike=aes128-sha256-modp2048
+    esp=aes128-sha256
+    lifetime=45m
+
+
+
+
+/etc/ipsec.secrets
+
+@Branch20 @HQ20 : PSK "network"
+
