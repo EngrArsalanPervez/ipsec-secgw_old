@@ -355,7 +355,11 @@ static void print_stats_cb(__rte_unused void *param) {
   printf("\nKNI statistics =====================================");
   print_kni_stats();
 
+  printf("\nNATS================================================\n");
+  printf("IKE String_C2S: %s\n\n", ike_string[0]);
+  printf("IKE String_S2C: %s\n", ike_string[1]);
   printf("\n====================================================\n");
+
   rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);
 }
 
