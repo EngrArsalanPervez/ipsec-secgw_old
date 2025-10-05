@@ -413,24 +413,23 @@ void print_ethaddr1(const char *name, struct rte_ether_addr *mac_addr) {
   char buf[RTE_ETHER_ADDR_FMT_SIZE];
   rte_ether_format_addr(buf, RTE_ETHER_ADDR_FMT_SIZE, mac_addr);
   RTE_LOG(INFO, APP, "\t%s%s\n", name, buf);
-  fprintf(stdout, "\nEUP:%s:%s\n", name, buf);
 }
 
 int kni_config_mac_address(uint16_t port_id, uint8_t mac_addr[]) {
+  int ret = 0;
+
   if (!rte_eth_dev_is_valid_port(port_id)) {
     RTE_LOG(ERR, APP, "Invalid port id %d\n", port_id);
     return -EINVAL;
   }
 
-  struct rte_ether_addr mac = {.addr_bytes =
-                                   vEth0_0_MAC}; // ← using global define
+  RTE_LOG(INFO, APP, "Configure mac address of %d\n", port_id);
+  print_ethaddr1("Address:", (struct rte_ether_addr *)mac_addr);
 
-  RTE_LOG(INFO, APP, "Setting hardcoded MAC for port %d\n", port_id);
-  print_ethaddr1("MAC: ", &mac);
-
-  int ret = rte_eth_dev_default_mac_addr_set(port_id, &mac);
+  ret = rte_eth_dev_default_mac_addr_set(port_id,
+                                         (struct rte_ether_addr *)mac_addr);
   if (ret < 0)
-    RTE_LOG(ERR, APP, "Failed to config MAC for port %d\n", port_id);
+    RTE_LOG(ERR, APP, "Failed to config mac_addr for port %d\n", port_id);
 
   return ret;
 }
@@ -476,6 +475,11 @@ int kni_alloc(uint16_t port_id) {
       if (ret != 0)
         rte_exit(EXIT_FAILURE, "Failed to get MAC address (port %u): %s\n",
                  port_id, rte_strerror(-ret));
+
+      struct rte_ether_addr hardcoded_mac = {
+          .addr_bytes = vEth0_0_MAC}; // ← using global define
+      rte_ether_addr_copy(&hardcoded_mac,
+                          (struct rte_ether_addr *)&conf.mac_addr);
 
       rte_eth_dev_get_mtu(port_id, &conf.mtu);
 
