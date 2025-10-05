@@ -22,7 +22,6 @@
 #include <rte_security.h>
 #include <rte_udp.h>
 
-#include "esp.h"
 #include "ipsec.h"
 #include "parser.h"
 #include "sa.h"
