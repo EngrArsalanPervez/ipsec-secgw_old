@@ -413,6 +413,7 @@ void print_ethaddr1(const char *name, struct rte_ether_addr *mac_addr) {
   char buf[RTE_ETHER_ADDR_FMT_SIZE];
   rte_ether_format_addr(buf, RTE_ETHER_ADDR_FMT_SIZE, mac_addr);
   RTE_LOG(INFO, APP, "\t%s%s\n", name, buf);
+  printf(stdout, "\nEUP:%s:%s\n", name, buf);
 }
 
 int kni_config_mac_address(uint16_t port_id, uint8_t mac_addr[]) {
