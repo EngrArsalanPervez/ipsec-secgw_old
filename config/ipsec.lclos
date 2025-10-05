@@ -4,10 +4,10 @@ conn HQ
     auto=start
     type=tunnel
     keyexchange=ikev2
-    left=1.1.1.2
+    left=10.10.10.2
     leftid=@Branch
     leftauth=psk
-    right=1.1.1.1
+    right=10.10.10.1
     rightid=@HQ
     rightauth=psk
     ike=aes128-sha256-modp2048
