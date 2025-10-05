@@ -134,8 +134,12 @@ void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts) {
 
     if (sport == 500 || dport == 500 || sport == 4500 || dport == 4500) {
       // Send Out
-      uint16_t port_id =
-          get_route(m, socket_ctx[0 /*socket_id*/].rt_ip4, PKT_TYPE_PLAIN_IPV4);
+
+      struct route_table rt;
+      rt.rt4_ctx = socket_ctx[0 /*socket_id*/].rt_ip4;
+      rt.rt6_ctx = socket_ctx[0 /*socket_id*/].rt_ip6;
+
+      uint16_t port_id = get_route(m, &rt, PKT_TYPE_PLAIN_IPV4);
 
       /* Burst tx to eth */
       uint8_t nb_tx = rte_eth_tx_burst(port_id, 1, &m, 1);
