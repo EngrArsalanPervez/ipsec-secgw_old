@@ -1275,13 +1275,18 @@ void ipsec_poll_mode_worker(void) {
       nb_rx = rte_eth_rx_burst(portid, queueid, pkts, MAX_PKT_BURST);
 
       if (nb_rx > 0) {
-        /* if (portid != UNPROTECTED_PORT) { */
-        /*   struct rte_mbuf *pkts_new[MAX_PKT_BURST]; */
-        /*   int32_t nb_rx_new = 0; */
-        /*   filter_ike_packets(nb_rx, pkts, &nb_rx_new, pkts_new); */
-        /*   memcpy(pkts, pkts_new, sizeof(pkts_new)); */
-        /*   nb_rx = nb_rx_new; */
-        /* } */
+        if (portid != UNPROTECTED_PORT) {
+          /* struct rte_mbuf *pkts_new[MAX_PKT_BURST]; */
+          /* int32_t nb_rx_new = 0; */
+          /* filter_ike_packets(nb_rx, pkts, &nb_rx_new, pkts_new); */
+          /* memcpy(pkts, pkts_new, sizeof(pkts_new)); */
+          /* nb_rx = nb_rx_new; */
+
+          unsigned num =
+              rte_kni_tx_burst(kni_port_params_array[0]->kni[0], pkts, nb_rx);
+          if (num)
+            kni_stats[0].rx_packets += num;
+        }
         core_stats_update_rx(nb_rx);
         process_pkts(qconf, pkts, nb_rx, portid);
       }
