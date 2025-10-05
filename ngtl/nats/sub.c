@@ -11,7 +11,6 @@
 
 extern char ike_string[2][1024];
 extern char ike_string_count;
-extern pthread_mutex_t ike_mutex;
 
 static volatile int running = 1;
 
@@ -44,11 +43,9 @@ void onMsg(natsConnection *conn, natsSubscription *sub, natsMsg *msg,
   const char *data = natsMsg_GetData(msg);
   printf("Received on [%s]: %s\n", subject, data);
   // Copy data into global ike_string safely
-  pthread_mutex_lock(&ike_mutex);
   snprintf(ike_string[ike_string_count++], sizeof(ike_string), "%s", data);
   if (ike_string_count == 2)
     ike_string_count = 0;
-  pthread_mutex_unlock(&ike_mutex);
 
   natsMsg_Destroy(msg);
 }
