@@ -556,8 +556,8 @@ static void print_stats_cb(__rte_unused void *param) {
   updateDeviceStatsToDB(&deviceStatsDate);
 
   // Print HashStats
-  printf("NETSTAT_COUNT:%30lu\n"
-         "NETSTAT_HITS:%30lu\n",
+  printf("NETSTAT_COUNT:%33lu\n"
+         "NETSTAT_HITS:%34lu\n",
          netstatStats.counts, netstatStats.hits);
 
   // Print Time
