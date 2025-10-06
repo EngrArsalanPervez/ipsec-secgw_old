@@ -1352,7 +1352,6 @@ static void handle_packet_arp(struct rte_mbuf *buf) {
   }
 }
 
-// ATI
 void dpi(struct rte_mbuf *buf, uint16_t portid, uint64_t lastPktTime) {
   unsigned char *pkt = rte_pktmbuf_mtod(buf, unsigned char *);
   struct rte_ether_hdr *ethHdr = (struct rte_ether_hdr *)pkt;
@@ -1501,7 +1500,6 @@ static inline void process_pkts(struct lcore_conf *qconf,
                                 struct rte_mbuf **pkts, uint8_t nb_pkts,
                                 uint16_t portid, uint64_t lastPktTime) {
 
-  // ATI
   handle_packets(pkts, nb_pkts, portid, lastPktTime);
 
   struct ipsec_traffic traffic;
@@ -3780,7 +3778,7 @@ int32_t main(int32_t argc, char **argv) {
     rte_exit(EXIT_FAILURE, "Failed to create subscriber pthread\n");
   }
 
-init_mongo_connection();
+  init_mongo_connection();
 
   if (stats_interval > 0)
     rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);

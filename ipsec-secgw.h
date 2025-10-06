@@ -91,7 +91,6 @@ struct ipsec_core_statistics {
   uint64_t dropped;
   uint64_t burst_rx;
 
-  // ATI
   uint64_t rx_bytes;
   uint64_t tx_bytes;
   uint64_t rx_bytes_old;
@@ -147,7 +146,6 @@ static inline void core_stats_update_rx(int n, struct rte_mbuf **pkts) {
   if (n == MAX_PKT_BURST)
     core_statistics[lcore_id].burst_rx += n;
 
-  // ATI
   for (uint16_t i = 0; i < n; i++) {
     core_statistics[lcore_id].rx_bytes += pkts[i]->pkt_len;
   }
@@ -158,7 +156,6 @@ static inline void core_stats_update_tx(int n, struct rte_mbuf **pkts) {
   core_statistics[lcore_id].tx += n;
   core_statistics[lcore_id].tx_call++;
 
-  // ATI
   for (uint16_t i = 0; i < n; i++) {
     core_statistics[lcore_id].tx_bytes += pkts[i]->pkt_len;
   }
