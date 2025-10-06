@@ -13,7 +13,7 @@ struct ipEncryptorTypeStruct {
   uint8_t kni_tx_core;
   uint8_t vEth0_0_MAC[RTE_ETHER_ADDR_LEN];
 };
-struct ipEncryptorTypeStruct ipEncryptorType;
+extern struct ipEncryptorTypeStruct ipEncryptorType;
 
 /* Max kernels threads per port */
 #define KNI_MAX_KTHREAD 32

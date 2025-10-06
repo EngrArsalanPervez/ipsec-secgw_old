@@ -1639,15 +1639,17 @@ static int parse_schedule_type(struct eh_conf* conf, const char* optarg) {
 
 void config_hclos_lclos() {
   if (strcmp(optarg, "HCLOS") == 0) {
+    uint8_t mac[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01};
     ipEncryptorType.client_port = 0;
     ipEncryptorType.kni_rx_core = 4;
     ipEncryptorType.kni_tx_core = 5;
-    ipEncryptorType.vEth0_0_MAC = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01};
+    memcpy(ipEncryptorType.vEth0_0_MAC, mac, RTE_ETHER_ADDR_LEN);
   } else if (strcmp(optarg, "LCLOS") == 0) {
+    uint8_t mac[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x02};
     ipEncryptorType.client_port = 0;
     ipEncryptorType.kni_rx_core = 2;
     ipEncryptorType.kni_tx_core = 3;
-    ipEncryptorType.vEth0_0_MAC = {0x02, 0x00, 0x00, 0x00, 0x00, 0x02};
+    memcpy(ipEncryptorType.vEth0_0_MAC, mac, RTE_ETHER_ADDR_LEN);
   }
   return -1;
 }
