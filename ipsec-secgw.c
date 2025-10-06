@@ -518,7 +518,7 @@ static void print_stats_cb(__rte_unused void *param) {
   printf("IKE String_C2S: %s\n", ike_string[0]);
   printf("IKE String_S2C: %s\n", ike_string[1]);
   printf("======================================================\n");
-  printAppStats();
+  /* printAppStats(); */
   updateAppStatsToDB();
   printf("======================================================\n");
 
