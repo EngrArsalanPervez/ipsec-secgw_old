@@ -952,15 +952,14 @@ int ipsec_launch_one_lcore(void *args) {
     if (pthread_create(&hash_tid, NULL, flushHashTablesLcore, NULL) != 0) {
       rte_exit(EXIT_FAILURE, "Failed to create hash pthread\n");
     }
-
-    kni_main(socket_ctx[0].mbuf_pool);
-    return 0;
-  } else if (lcore_id == ipEncryptorType.kni_tx_core) {
     pthread_t log_tid;
     if (pthread_create(&log_tid, NULL, logsManagerLcore, NULL) != 0) {
       rte_exit(EXIT_FAILURE, "Failed to create log pthread\n");
     }
 
+    kni_main(socket_ctx[0].mbuf_pool);
+    return 0;
+  } else if (lcore_id == ipEncryptorType.kni_tx_core) {
     kni_main(socket_ctx[0].mbuf_pool);
     return 0;
   }

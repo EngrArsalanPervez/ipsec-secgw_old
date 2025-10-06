@@ -210,7 +210,7 @@ int main_loop(void *arg) {
       if (f_pause)
         continue;
       kni_ingress(kni_port_params_array[i]);
-      rte_delay_us_sleep(10000); // sleep for 100 µs
+      rte_delay_us_sleep(1000); // sleep for 1 ms
     }
   } else if (flag == LCORE_TX) {
     RTE_LOG(INFO, APP, "Lcore %u is writing to port %d\n",
@@ -224,7 +224,6 @@ int main_loop(void *arg) {
       if (f_pause)
         continue;
       kni_egress(kni_port_params_array[i], &rt);
-      rte_delay_us_sleep(100); // sleep for 100 µs
     }
   } else
     RTE_LOG(INFO, APP, "Lcore %u has nothing to do\n", lcore_id);
