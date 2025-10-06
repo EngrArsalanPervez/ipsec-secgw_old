@@ -474,7 +474,7 @@ static void print_stats_cb(__rte_unused void *param) {
            "\nPackets dropped: %31" PRIu64 "\nBurst percent:\t\t %23.2f"
            "\nPackets per Rx call:\t\t%16.2f"
            "\nPackets per Tx call:\t\t%16.2f"
-           "\nrx_bytes:\t%34" PRIu64 "\ntx_bytes:\t%34" PRIu64
+           "\nrx_bytes:\t%32" PRIu64 "\ntx_bytes:\t%32" PRIu64
            "\nrxBytesNormalized:\t%23s"
            "\ntxBytesNormalized:\t%23s"
            "\nrxRate:\t\t\t%23.2f Mb/s"
