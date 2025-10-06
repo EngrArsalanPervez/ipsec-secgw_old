@@ -1239,13 +1239,12 @@ static inline void route6_pkts(struct rt_ctx *rt_ctx, struct rte_mbuf *pkts[],
     send_single_packet(pkts[i], pkt_hop & 0xff, IPPROTO_IPV6);
   }
 }
-
-void flushHashTablesLcore(void) {
+void *flushHashTablesLcore(void *arg) {
   while (!force_quit) {
     flushHashTable();
   }
 }
-void logsManagerLcore(void) {
+void *logsManagerLcore(void *arg) {
   while (!force_quit) {
     int ret = pop(&head);
     if (ret >= 0) {
@@ -1901,7 +1900,8 @@ static void print_usage(const char *prgname) {
       "  -f CONFIG_FILE: Configuration file\n"
       "  --config (port,queue,lcore): Rx queue configuration. In poll\n"
       "                               mode determines which queues from\n"
-      "                               which ports are mapped to which cores.\n"
+      "                               which ports are mapped to which "
+      "cores.\n"
       "                               In event mode this option is not used\n"
       "                               as packets are dynamically scheduled\n"
       "                               to cores by HW.\n"
@@ -3128,10 +3128,10 @@ static void create_default_ipsec_flow(uint16_t port_id, uint64_t rx_offloads) {
     return;
 
   flow_info_tbl[port_id].rx_def_flow = flow;
-  RTE_LOG(
-      INFO, IPSEC,
-      "Created default flow enabling SECURITY for all ESP traffic on port %d\n",
-      port_id);
+  RTE_LOG(INFO, IPSEC,
+          "Created default flow enabling SECURITY for all ESP traffic on "
+          "port %d\n",
+          port_id);
 }
 
 static void signal_handler(int signum) {
@@ -3691,7 +3691,8 @@ int32_t main(int32_t argc, char **argv) {
     /* Pre-populate pkt offloads based on capabilities */
     lcore_conf[lcore_id].outbound.ipv4_offloads = RTE_MBUF_F_TX_IPV4;
     lcore_conf[lcore_id].outbound.ipv6_offloads = RTE_MBUF_F_TX_IPV6;
-    /* Update per lcore checksum offload support only if all ports support it */
+    /* Update per lcore checksum offload support only if all ports support it
+     */
     if (ipv4_cksum_port_mask == enabled_port_mask)
       lcore_conf[lcore_id].outbound.ipv4_offloads |= RTE_MBUF_F_TX_IP_CKSUM;
   }

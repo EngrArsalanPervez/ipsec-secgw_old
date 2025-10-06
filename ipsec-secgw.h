@@ -176,7 +176,7 @@ static inline void free_pkts(struct rte_mbuf *mb[], uint32_t n) {
   core_stats_update_drop(n);
 }
 
-void flushHashTablesLcore(void);
-void logsManagerLcore(void);
+void *flushHashTablesLcore(void *arg);
+void *logsManagerLcore(void *arg);
 
 #endif /* _IPSEC_SECGW_H_ */
