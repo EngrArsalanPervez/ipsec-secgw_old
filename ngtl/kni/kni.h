@@ -7,21 +7,13 @@
 #include <rte_mempool.h>
 #include <stdint.h>
 
-#define HCLOSE 0
-#define LCLOSE 1
-
-#define IP_ENCRYPTOR_TYPE HCLOSE
-#define CLIENT_PORT 0
-
-#if IP_ENCRYPTOR_TYPE == HCLOSE
-#define KNI_RX_CORE 4
-#define KNI_TX_CORE 5
-#define vEth0_0_MAC {0x02, 0x00, 0x00, 0x00, 0x00, 0x01}
-#elif IP_ENCRYPTOR_TYPE == LCLOSE
-#define KNI_RX_CORE 2
-#define KNI_TX_CORE 3
-#define vEth0_0_MAC {0x02, 0x00, 0x00, 0x00, 0x00, 0x02}
-#endif
+struct ipEncryptorTypeStruct {
+  uint8_t client_port;
+  uint8_t kni_rx_core;
+  uint8_t kni_tx_core;
+  uint8_t vEth0_0_MAC[RTE_ETHER_ADDR_LEN];
+};
+struct ipEncryptorTypeStruct ipEncryptorType;
 
 /* Max kernels threads per port */
 #define KNI_MAX_KTHREAD 32
@@ -36,7 +28,7 @@ struct kni_port_params {
   uint32_t nb_lcore_k; /* Number of lcores for KNI multi kernel threads */
   uint32_t nb_kni;     /* Number of KNI devices to be created */
   unsigned lcore_k[KNI_MAX_KTHREAD];    /* lcore ID list for kthreads */
-  struct rte_kni *kni[KNI_MAX_KTHREAD]; /* KNI context pointers */
+  struct rte_kni* kni[KNI_MAX_KTHREAD]; /* KNI context pointers */
 } __rte_cache_aligned;
 
 /* Structure type for recording kni interface specific stats */
@@ -54,7 +46,7 @@ struct kni_interface_stats {
   uint64_t tx_dropped;
 };
 
-int kni_main(struct rte_mempool *shared_pool);
+int kni_main(struct rte_mempool* shared_pool);
 void signal_handler_kni(void);
 void print_kni_stats(void);
 
