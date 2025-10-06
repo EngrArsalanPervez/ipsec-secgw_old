@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
+#include <rte_mbuf_core.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -1266,6 +1267,22 @@ static void send_packets_eth(struct rte_mbuf *pkts[], uint8_t port,
   // ports->tx_stats.tx_bytes[port] += (*pkts)->pkt_len;
 }
 
+static inline struct rte_mbuf *clone_mbuf(struct rte_mbuf *m) {
+
+  struct rte_mempool *mp = socket_ctx[0].mbuf_pool;
+
+  if (unlikely(m == NULL || mp == NULL))
+    return NULL;
+
+  struct rte_mbuf *m_clone = rte_pktmbuf_clone(m, mp);
+  if (unlikely(m_clone == NULL)) {
+    RTE_LOG(ERR, USER1, "Failed to clone mbuf: %s\n", rte_strerror(rte_errno));
+    return NULL;
+  }
+
+  return m_clone;
+}
+
 #define MY_MAC0 0x00
 #define MY_MAC1 0x90
 #define MY_MAC2 0x0B
@@ -1273,10 +1290,13 @@ static void send_packets_eth(struct rte_mbuf *pkts[], uint8_t port,
 #define MY_MAC4 0xFC
 #define MY_MAC5 0x27
 
-#define MY_IP0 192
-#define MY_IP1 168
-#define MY_IP2 105
-#define MY_IP3 1
+const char *MY_IPS_STRING[] = {"192.168.5.1",   "192.168.6.1",
+                               "192.168.7.1",   "192.168.105.1",
+                               "192.168.106.1", "192.168.107.1"};
+
+uint32_t MY_IPS_DECIMAL[] = {3232236801, 3232237057, 3232237313,
+                             3232262401, 3232262657, 3232262913};
+size_t num_my_ips_decimal = sizeof(MY_IPS_DECIMAL) / sizeof(MY_IPS_DECIMAL[0]);
 
 static void handle_packet_arp(struct rte_mbuf *buf) {
   uint8_t vlan = 0;
@@ -1285,9 +1305,26 @@ static void handle_packet_arp(struct rte_mbuf *buf) {
   if (pkt[vlan + 20] == 0x00 && pkt[vlan + 21] == 0x01) {
     // ARP Request
 
-    if (pkt[vlan + 38] == MY_IP0 && pkt[vlan + 39] == MY_IP1 &&
-        pkt[vlan + 40] == MY_IP2 && pkt[vlan + 41] == MY_IP3) {
-      // Dst MAC
+    uint32_t myIPAddrDec = pkt[vlan + 38];
+    myIPAddrDec = myIPAddrDec << 8;
+    myIPAddrDec = pkt[vlan + 39];
+    myIPAddrDec = myIPAddrDec << 8;
+    myIPAddrDec = pkt[vlan + 40];
+    myIPAddrDec = myIPAddrDec << 8;
+    myIPAddrDec = pkt[vlan + 41];
+
+    int i = 0;
+    int found = 0;
+
+    while (i < num_ips) {
+      if (MY_IPS_DECIMAL[i] == myIPAddrDec) {
+        found = 1;
+        break;
+      }
+      i++;
+    }
+
+    if (found) { // Dst MAC
       pkt[0] = pkt[6];
       pkt[1] = pkt[7];
       pkt[2] = pkt[8];
@@ -1322,10 +1359,10 @@ static void handle_packet_arp(struct rte_mbuf *buf) {
       target_ip[3] = pkt[vlan + 31];
 
       // Sender IP Addr
-      pkt[vlan + 28] = MY_IP0;
-      pkt[vlan + 29] = MY_IP1;
-      pkt[vlan + 30] = MY_IP2;
-      pkt[vlan + 31] = MY_IP3;
+      pkt[vlan + 28] = pkt[vlan + 38];
+      pkt[vlan + 29] = pkt[vlan + 38];
+      pkt[vlan + 30] = pkt[vlan + 38];
+      pkt[vlan + 31] = pkt[vlan + 38];
 
       // Target MAC Addr
       pkt[vlan + 32] = pkt[0];
@@ -1345,7 +1382,8 @@ static void handle_packet_arp(struct rte_mbuf *buf) {
       dump_packet(buf);
 #endif
 
-      send_packets_eth(&buf, 0, 0);
+      struct rte_mbuf *clone = clone_mbuf(buf);
+      send_packets_eth(&clone, 0, 0);
       return;
     }
   }
