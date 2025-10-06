@@ -946,7 +946,7 @@ static void ipsec_eventmode_worker(struct eh_conf *conf) {
 int ipsec_launch_one_lcore(void *args) {
   uint32_t lcore_id = rte_lcore_id();
 
-  if (lcore_id == ipEncryptorType.kni_rx_core || lcore_id == ipEncryptorType.kni_rx_core) {
+  if (lcore_id == ipEncryptorType.kni_rx_core || lcore_id == ipEncryptorType.kni_tx_core) {
     kni_main(socket_ctx[0].mbuf_pool);
     return 0;
   }
