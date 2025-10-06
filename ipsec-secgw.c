@@ -3780,7 +3780,7 @@ int32_t main(int32_t argc, char **argv) {
     rte_exit(EXIT_FAILURE, "Failed to create subscriber pthread\n");
   }
 
-  cleanup_mongo();
+init_mongo_connection();
 
   if (stats_interval > 0)
     rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);
@@ -3796,6 +3796,8 @@ int32_t main(int32_t argc, char **argv) {
 
   // NATS-Sub
   pthread_join(sub_tid, NULL);
+
+  cleanup_mongo();
 
   /* Uninitialize eventmode components */
   ret = eh_devs_uninit(eh_conf);
