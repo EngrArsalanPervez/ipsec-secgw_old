@@ -87,24 +87,15 @@ void kni_burst_free_mbufs(struct rte_mbuf **pkts, unsigned num) {
 
 // rx from eth, tx to kni
 void kni_ingress(struct kni_port_params *p) {
-  uint8_t i;
-  uint16_t port_id;
-  unsigned nb_rx, num;
-  uint32_t nb_kni;
-  struct rte_mbuf *pkts_burst[PKT_BURST_SZ];
-
   if (p == NULL)
     return;
 
-  nb_kni = p->nb_kni;
-  port_id = p->port_id;
+  uint8_t i;
+  uint32_t nb_kni = p->nb_kni;
+
   for (i = 0; i < nb_kni; i++) {
+    // Process kernel-side requests (e.g., change MTU, MAC, link up/down)
     rte_kni_handle_request(p->kni[i]);
-    if (unlikely(num < nb_rx)) {
-      /* Free mbufs not tx to kni interface */
-      kni_burst_free_mbufs(&pkts_burst[num], nb_rx - num);
-      kni_stats[port_id].rx_dropped += nb_rx - num;
-    }
   }
 }
 
@@ -219,6 +210,7 @@ int main_loop(void *arg) {
       if (f_pause)
         continue;
       kni_ingress(kni_port_params_array[i]);
+      rte_delay_us_sleep(100); // sleep for 100 µs
     }
   } else if (flag == LCORE_TX) {
     RTE_LOG(INFO, APP, "Lcore %u is writing to port %d\n",
@@ -232,6 +224,7 @@ int main_loop(void *arg) {
       if (f_pause)
         continue;
       kni_egress(kni_port_params_array[i], &rt);
+      rte_delay_us_sleep(100); // sleep for 100 µs
     }
   } else
     RTE_LOG(INFO, APP, "Lcore %u has nothing to do\n", lcore_id);
