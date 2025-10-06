@@ -56,6 +56,7 @@
 #include "flow.h"
 #include "ipsec.h"
 #include "ipsec_worker.h"
+#include "ngtl/kni/kni.h"
 #include "parser.h"
 #include "sad.h"
 
@@ -438,7 +439,7 @@ static void print_stats_cb(__rte_unused void *param) {
 
   printf("\nCore statistics ====================================");
 
-  for (coreid = 0; coreid < RTE_MAX_LCORE; coreid++) {
+  for (coreid = 0; coreid < ipEncryptorType.total_ports; coreid++) {
     /* skip disabled cores */
     if (rte_lcore_is_enabled(coreid) == 0)
       continue;
@@ -2076,6 +2077,7 @@ static int parse_schedule_type(struct eh_conf *conf, const char *optarg) {
 int config_hclos_lclos() {
   if (strcmp(optarg, "HCLOS") == 0) {
     uint8_t mac[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01};
+    ipEncryptorType.total_ports = 4;
     ipEncryptorType.client_port = 0;
     ipEncryptorType.kni_rx_core = 4;
     ipEncryptorType.kni_tx_core = 5;
@@ -2083,6 +2085,7 @@ int config_hclos_lclos() {
     return 0;
   } else if (strcmp(optarg, "LCLOS") == 0) {
     uint8_t mac[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x02};
+    ipEncryptorType.total_ports = 2;
     ipEncryptorType.client_port = 0;
     ipEncryptorType.kni_rx_core = 2;
     ipEncryptorType.kni_tx_core = 3;

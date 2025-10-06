@@ -1,6 +1,7 @@
 #ifndef _KNI_H_
 #define _KNI_H_
 
+#include <cstdint>
 #include <rte_ethdev.h>
 #include <rte_ether.h>
 #include <rte_kni.h>
@@ -8,6 +9,7 @@
 #include <stdint.h>
 
 struct ipEncryptorTypeStruct {
+  uint8_t total_ports;
   uint8_t client_port;
   uint8_t kni_rx_core;
   uint8_t kni_tx_core;
@@ -28,7 +30,7 @@ struct kni_port_params {
   uint32_t nb_lcore_k; /* Number of lcores for KNI multi kernel threads */
   uint32_t nb_kni;     /* Number of KNI devices to be created */
   unsigned lcore_k[KNI_MAX_KTHREAD];    /* lcore ID list for kthreads */
-  struct rte_kni* kni[KNI_MAX_KTHREAD]; /* KNI context pointers */
+  struct rte_kni *kni[KNI_MAX_KTHREAD]; /* KNI context pointers */
 } __rte_cache_aligned;
 
 /* Structure type for recording kni interface specific stats */
@@ -46,7 +48,7 @@ struct kni_interface_stats {
   uint64_t tx_dropped;
 };
 
-int kni_main(struct rte_mempool* shared_pool);
+int kni_main(struct rte_mempool *shared_pool);
 void signal_handler_kni(void);
 void print_kni_stats(void);
 
