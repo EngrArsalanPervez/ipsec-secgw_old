@@ -333,7 +333,7 @@ void flushHashTable(void) {
   int n = 0, ret = 0;
   for (n = 0; n < NETSTAT_ENTRIES; n++) {
     if (netstatData[n].status == 1) {
-      if (((curr_time - netstatData[n].lastPktTime)) > 5) {
+      if (((curr_time - netstatData[n].lastPktTime)) > 15) {
         ret = rte_hash_lookup(NETSTAT, (void *)&netstatData[n].key);
         if (ret >= 0) {
           ret = rte_hash_del_key(NETSTAT, (void *)&netstatData[ret].key);

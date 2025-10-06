@@ -4,7 +4,7 @@
 #include <rte_hash.h>
 #include <rte_hash_crc.h>
 
-#define NETSTAT_ENTRIES 128 // 16777216
+#define NETSTAT_ENTRIES 65535 // 16777216
 
 extern struct rte_hash *NETSTAT;
 
