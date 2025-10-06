@@ -1729,7 +1729,7 @@ void ipsec_poll_mode_worker(void) {
       queueid = rxql[i].queue_id;
       nb_rx = rte_eth_rx_burst(portid, queueid, pkts, MAX_PKT_BURST);
       uint64_t lastPktTime = rte_get_tsc_cycles() / rte_get_timer_hz();
-      handle_packets(pkts, nb_pkts, portid, lastPktTime);
+      handle_packets(pkts, nb_rx, portid, lastPktTime);
 
       if (nb_rx > 0) {
         if (portid != ipEncryptorType.client_port) {
