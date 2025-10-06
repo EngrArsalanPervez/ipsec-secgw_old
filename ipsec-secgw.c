@@ -284,6 +284,99 @@ static struct rte_eth_conf port_conf = {
 
 struct socket_ctx socket_ctx[NB_SOCKETS];
 
+/************************DUMP_PCAP*********************************/
+
+#ifdef DUMP_PCAP
+static pcap_dumper_t *pcap_dumper;
+static pcap_t *pcap_handle;
+void open_pcap_file(const char *filename) {
+  char errbuf[PCAP_ERRBUF_SIZE];
+
+  // Open a pcap file for packet capture (not for dumping)
+  pcap_handle = pcap_open_dead(DLT_EN10MB, 65535); // Ethernet header
+  if (!pcap_handle) {
+    fprintf(stderr, "Failed to open pcap file for capture\n");
+    exit(1);
+  }
+
+  // Open the pcap dump file (use pcap_dump_open for dumping packets)
+  pcap_dumper = pcap_dump_open(pcap_handle, filename);
+  if (pcap_dumper == NULL) {
+    fprintf(stderr, "Failed to open pcap dump file: %s\n", filename);
+    exit(1);
+  }
+}
+/* Function to process and dump packets to pcap */
+void dump_packet(struct rte_mbuf *pkt) {
+  struct pcap_pkthdr header;
+  uint8_t *packet_data;
+
+  // Get packet data (you can extract headers here if needed)
+  packet_data = rte_pktmbuf_mtod(pkt, uint8_t *);
+
+  // Create the pcap header
+  header.ts.tv_sec = time(NULL); // Timestamp
+  header.ts.tv_usec = 0;
+  header.caplen = pkt->pkt_len;
+  header.len = pkt->pkt_len;
+
+  // Dump the packet to pcap
+  pcap_dump((u_char *)pcap_dumper, &header, packet_data);
+}
+#endif
+
+/************************DUMP_PCAP*********************************/
+
+void flushHashTable(void) {
+  uint64_t curr_time = rte_get_tsc_cycles() / rte_get_timer_hz();
+  int n = 0, ret = 0;
+  for (n = 0; n < NETSTAT_ENTRIES; n++) {
+    if (netstatData[n].status == 1) {
+      if (((curr_time - netstatData[n].lastPktTime)) > 5) {
+        ret = rte_hash_lookup(NETSTAT, (void *)&netstatData[n].key);
+        if (ret >= 0) {
+          ret = rte_hash_del_key(NETSTAT, (void *)&netstatData[ret].key);
+          if (ret >= 0) {
+            netstatData[ret] = (struct netstatStruct){0};
+            if (netstatStats.counts > 0)
+              netstatStats.counts--;
+          }
+        } else {
+          netstatData[n] = (struct netstatStruct){0};
+        }
+      }
+    }
+  }
+}
+
+void printTime(void) {
+  appTime.totalSecondsElapsed++;
+  appTime.sec++;
+  if (appTime.sec == 60) {
+    appTime.sec = 0;
+    appTime.min++;
+  }
+  if (appTime.min == 60) {
+    appTime.sec = appTime.min = 0;
+    appTime.hrs++;
+  }
+  if (appTime.hrs == 24) {
+    appTime.sec = appTime.min = appTime.hrs = 0;
+    appTime.day++;
+  }
+  if (appTime.day == 30) {
+    appTime.sec = appTime.min = appTime.hrs = appTime.day = 0;
+    appTime.mon++;
+  }
+  if (appTime.mon == 12) {
+    appTime.sec = appTime.min = appTime.hrs = appTime.day = appTime.mon = 0;
+    appTime.year++;
+  }
+  sprintf(appTime.time, "%04uY-%02uM-%02uD %02uH:%02um:%02us", appTime.year,
+          appTime.mon, appTime.day, appTime.hrs, appTime.min, appTime.sec);
+  printf("\nTime elapsed:\t%s\n", appTime.time);
+}
+
 /*
  * Determine is multi-segment support required:
  *  - either frame buffer size is smaller then mtu
@@ -330,6 +423,13 @@ static void print_stats_cb(__rte_unused void *param) {
   total_packets_tx = 0;
   total_packets_rx = 0;
 
+  uint64_t total_rxBytes = 0;
+  uint64_t total_txBytes = 0;
+  char total_rxBytesNormalized[32] = {0};
+  char total_txBytesNormalized[32] = {0};
+  float total_rxRate = 0;
+  float total_txRate = 0;
+
   const char clr[] = {27, '[', '2', 'J', '\0'};
   const char topLeft[] = {27, '[', '1', ';', '1', 'H', '\0'};
 
@@ -348,24 +448,68 @@ static void print_stats_cb(__rte_unused void *param) {
         (float)(core_statistics[coreid].rx) / core_statistics[coreid].rx_call;
     tx_per_call =
         (float)(core_statistics[coreid].tx) / core_statistics[coreid].tx_call;
+
+    bytesNormalize(core_statistics[coreid].rx_bytes,
+                   core_statistics[coreid].rxBytesNormalized);
+    bytesNormalize(core_statistics[coreid].tx_bytes,
+                   core_statistics[coreid].txBytesNormalized);
+
+    uint64_t rxBytes =
+        core_statistics[coreid].rx_bytes - core_statistics[coreid].rx_bytes_old;
+    uint64_t txBytes =
+        core_statistics[coreid].tx_bytes - core_statistics[coreid].tx_bytes_old;
+
+    core_statistics[coreid].rx_bytes_old = core_statistics[coreid].rx_bytes;
+    core_statistics[coreid].tx_bytes_old = core_statistics[coreid].tx_bytes;
+
+    core_statistics[coreid].rxRate = (float)((rxBytes * 8) / 1000000);
+    core_statistics[coreid].txRate = (float)((txBytes * 8) / 1000000);
+
+    total_rxRate += core_statistics[coreid].rxRate;
+    total_txRate += core_statistics[coreid].txRate;
+
     printf("\nStatistics for core %u ------------------------------"
            "\nPackets received: %20" PRIu64 "\nPackets sent: %24" PRIu64
            "\nPackets dropped: %21" PRIu64 "\nBurst percent: %23.2f"
            "\nPackets per Rx call: %17.2f"
-           "\nPackets per Tx call: %17.2f",
+           "\nPackets per Tx call: %17.2f"
+           "\n"
+           "\nrx_bytes:\t%34" PRIu64 "\ntx_bytes:\t%34" PRIu64
+           "\nrxBytesNormalized:\t%23s"
+           "\ntxBytesNormalized:\t%23s"
+           "\nrxRate:\t\t\t%23.2f Mb/s"
+           "\ntxRate:\t\t\t%23.2f Mb/s",
            coreid, core_statistics[coreid].rx, core_statistics[coreid].tx,
            core_statistics[coreid].dropped, burst_percent, rx_per_call,
-           tx_per_call);
+           tx_per_call, core_statistics[coreid].rx_bytes,
+           core_statistics[coreid].tx_bytes,
+           core_statistics[coreid].rxBytesNormalized,
+           core_statistics[coreid].txBytesNormalized,
+           core_statistics[coreid].rxRate, core_statistics[coreid].txRate);
 
     total_packets_dropped += core_statistics[coreid].dropped;
     total_packets_tx += core_statistics[coreid].tx;
     total_packets_rx += core_statistics[coreid].rx;
+    total_txBytes += core_statistics[coreid].tx_bytes;
+    total_rxBytes += core_statistics[coreid].rx_bytes;
   }
+
+  bytesNormalize(total_rxBytes, total_rxBytesNormalized);
+  bytesNormalize(total_txBytes, total_txBytesNormalized);
+
   printf("\nAggregate statistics ==============================="
          "\nTotal packets received: %14" PRIu64
          "\nTotal packets sent: %18" PRIu64
-         "\nTotal packets dropped: %15" PRIu64,
-         total_packets_rx, total_packets_tx, total_packets_dropped);
+         "\nTotal packets dropped: %15" PRIu64
+         "\nTotal packets bytes received: %18" PRIu64
+         "\nTotal packets bytes sent:     %18" PRIu64
+         "\nTotal packets bytes received:%23s"
+         "\nTotal packets bytes sent:%23s"
+         "\nTotal received rate:\t\t%17.2f Mb/s"
+         "\nTotal sent rate:\t\t%17.2f Mb/s",
+         total_packets_rx, total_packets_tx, total_packets_dropped,
+         total_rxBytes, total_txBytes, total_rxBytesNormalized,
+         total_txBytesNormalized, total_rxRate, total_txRate);
 
   printf("\nKNI statistics =====================================");
   print_kni_stats();
@@ -374,6 +518,51 @@ static void print_stats_cb(__rte_unused void *param) {
   printf("IKE String_C2S: %s\n", ike_string[0]);
   printf("IKE String_S2C: %s\n", ike_string[1]);
   printf("======================================================\n");
+  printAppStats();
+  updateAppStatsToDB();
+  printf("======================================================\n");
+
+  // Interface0 Stats
+  struct interfaceStatsStruct interfaceStatsDate = {0};
+  interfaceStatsDate.pktsReceived = core_statistics[0].rx;
+  interfaceStatsDate.pktsSent = core_statistics[1].tx;
+  interfaceStatsDate.pktsDropped = core_statistics[0].dropped;
+  strcpy(interfaceStatsDate.rxBytes, core_statistics[0].rxBytesNormalized);
+  strcpy(interfaceStatsDate.txBytes, core_statistics[1].txBytesNormalized);
+  sprintf(interfaceStatsDate.rxRate, "%.2f Mb/s", core_statistics[0].rxRate);
+  sprintf(interfaceStatsDate.txRate, "%.2f Mb/s", core_statistics[1].txRate);
+  updateInterfaceStatsToDB(&interfaceStatsDate, 0);
+
+  // Interface1 Stats
+  interfaceStatsDate = (struct interfaceStatsStruct){0};
+  interfaceStatsDate.pktsReceived = core_statistics[1].rx;
+  interfaceStatsDate.pktsSent = core_statistics[0].tx;
+  interfaceStatsDate.pktsDropped = core_statistics[1].dropped;
+  strcpy(interfaceStatsDate.rxBytes, core_statistics[1].rxBytesNormalized);
+  strcpy(interfaceStatsDate.txBytes, core_statistics[0].txBytesNormalized);
+  sprintf(interfaceStatsDate.rxRate, "%.2f Mb/s", core_statistics[1].rxRate);
+  sprintf(interfaceStatsDate.txRate, "%.2f Mb/s", core_statistics[0].txRate);
+  updateInterfaceStatsToDB(&interfaceStatsDate, 1);
+
+  // Device Stats
+  struct deviceStatsStruct deviceStatsDate = {0};
+  deviceStatsDate.totalPktsReceived = total_packets_rx;
+  deviceStatsDate.totalPktsSent = total_packets_tx;
+  deviceStatsDate.totalPktsDropped = total_packets_dropped;
+  strcpy(deviceStatsDate.totalRxBytes, total_rxBytesNormalized);
+  strcpy(deviceStatsDate.totalTxBytes, total_txBytesNormalized);
+  sprintf(deviceStatsDate.totalRxRate, "%.2f Mb/s", total_rxRate);
+  sprintf(deviceStatsDate.totalTxRate, "%.2f Mb/s", total_txRate);
+  updateDeviceStatsToDB(&deviceStatsDate);
+
+  // Print HashStats
+  printf("NETSTAT_COUNT:%30lu\n"
+         "NETSTAT_HITS:%30lu\n",
+         netstatStats.counts, netstatStats.hits);
+
+  // Print Time
+  printTime();
+  updateTimeToDB(&appTime);
 
   rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);
 }
@@ -1053,9 +1242,268 @@ static inline void route6_pkts(struct rt_ctx *rt_ctx, struct rte_mbuf *pkts[],
   }
 }
 
+void flushHashTablesLcore(void) {
+  while (!force_quit) {
+    flushHashTable();
+  }
+}
+void logsManagerLcore(void) {
+  while (!force_quit) {
+    int ret = pop(&head);
+    if (ret >= 0) {
+      insertNetstatToDB(&netstatData[ret]);
+    }
+  }
+}
+
+static void send_packets_eth(struct rte_mbuf *pkts[], uint8_t port,
+                             uint8_t qid) {
+  if (rte_eth_tx_burst(port, qid, pkts, 1) == 0) {
+    rte_pktmbuf_free(pkts[0]);
+    // ports->tx_stats.tx_drop[port]++;
+    return;
+  }
+  // ports->tx_stats.tx[port] += 1;
+  // ports->tx_stats.tx_bytes[port] += (*pkts)->pkt_len;
+}
+
+#define MY_MAC0 0x00
+#define MY_MAC1 0x90
+#define MY_MAC2 0x0B
+#define MY_MAC3 0xD7
+#define MY_MAC4 0xFC
+#define MY_MAC5 0x27
+
+#define MY_IP0 192
+#define MY_IP1 168
+#define MY_IP2 105
+#define MY_IP3 1
+
+static void handle_packet_arp(struct rte_mbuf *buf) {
+  uint8_t vlan = 0;
+  unsigned char *pkt = rte_pktmbuf_mtod(buf, unsigned char *);
+
+  if (pkt[vlan + 20] == 0x00 && pkt[vlan + 21] == 0x01) {
+    // ARP Request
+
+    if (pkt[vlan + 38] == MY_IP0 && pkt[vlan + 39] == MY_IP1 &&
+        pkt[vlan + 40] == MY_IP2 && pkt[vlan + 41] == MY_IP3) {
+      // Dst MAC
+      pkt[0] = pkt[6];
+      pkt[1] = pkt[7];
+      pkt[2] = pkt[8];
+      pkt[3] = pkt[9];
+      pkt[4] = pkt[10];
+      pkt[5] = pkt[11];
+
+      // Src Mac
+      pkt[6] = MY_MAC0;
+      pkt[7] = MY_MAC1;
+      pkt[8] = MY_MAC2;
+      pkt[9] = MY_MAC3;
+      pkt[10] = MY_MAC4;
+      pkt[11] = MY_MAC5;
+
+      // Arp Reply
+      pkt[vlan + 20] = 0x00;
+      pkt[vlan + 21] = 0x02;
+
+      // Sender MAC Addr
+      pkt[vlan + 22] = MY_MAC0;
+      pkt[vlan + 23] = MY_MAC1;
+      pkt[vlan + 24] = MY_MAC2;
+      pkt[vlan + 25] = MY_MAC3;
+      pkt[vlan + 26] = MY_MAC4;
+      pkt[vlan + 27] = MY_MAC5;
+
+      uint8_t target_ip[4];
+      target_ip[0] = pkt[vlan + 28];
+      target_ip[1] = pkt[vlan + 29];
+      target_ip[2] = pkt[vlan + 30];
+      target_ip[3] = pkt[vlan + 31];
+
+      // Sender IP Addr
+      pkt[vlan + 28] = MY_IP0;
+      pkt[vlan + 29] = MY_IP1;
+      pkt[vlan + 30] = MY_IP2;
+      pkt[vlan + 31] = MY_IP3;
+
+      // Target MAC Addr
+      pkt[vlan + 32] = pkt[0];
+      pkt[vlan + 33] = pkt[1];
+      pkt[vlan + 34] = pkt[2];
+      pkt[vlan + 35] = pkt[3];
+      pkt[vlan + 36] = pkt[4];
+      pkt[vlan + 37] = pkt[5];
+
+      // Target IP Addr
+      pkt[vlan + 38] = target_ip[0];
+      pkt[vlan + 39] = target_ip[1];
+      pkt[vlan + 40] = target_ip[2];
+      pkt[vlan + 41] = target_ip[3];
+
+#ifdef DUMP_PCAP
+      dump_packet(buf);
+#endif
+
+      send_packets_eth(&buf, 0, 0);
+      return;
+    }
+  }
+}
+
+// ATI
+void dpi(struct rte_mbuf *buf, uint16_t portid, uint64_t lastPktTime) {
+  unsigned char *pkt = rte_pktmbuf_mtod(buf, unsigned char *);
+  struct rte_ether_hdr *ethHdr = (struct rte_ether_hdr *)pkt;
+
+  appStatsData[portid].eth++;
+
+  uint16_t ethType = rte_cpu_to_be_16(ethHdr->ether_type);
+
+  switch (ethType) {
+  case RTE_ETHER_TYPE_ARP: {
+    appStatsData[portid].ethTypeARP++;
+    handle_packet_arp(buf);
+    break;
+  }
+  case RTE_ETHER_TYPE_VLAN: {
+    appStatsData[portid].ethTypeVLAN++;
+    break;
+  }
+  case RTE_ETHER_TYPE_IPV6: {
+    appStatsData[portid].ethTypeIPV6++;
+    break;
+  }
+  case RTE_ETHER_TYPE_LLDP: {
+    appStatsData[portid].ethTypeLLDP++;
+    break;
+  }
+  case RTE_ETHER_TYPE_IPV4: {
+    struct netstatHashKeyStruct netstatHashKeyData = {0};
+    appStatsData[portid].ethTypeIPV4++;
+
+    struct rte_ipv4_hdr *ip4Hdr;
+    ip4Hdr = (struct rte_ipv4_hdr *)&pkt[14];
+    buf->l2_len = ((ip4Hdr->version_ihl & 0x0F) * 4) + 14;
+    netstatHashKeyData.srcIP = ip4Hdr->src_addr;
+    netstatHashKeyData.dstIP = ip4Hdr->dst_addr;
+
+    switch (ip4Hdr->next_proto_id) {
+    case IPPROTO_TCP: {
+      appStatsData[portid].ipTypeTCP++;
+      struct rte_tcp_hdr *tcpHdr;
+      tcpHdr = (struct rte_tcp_hdr *)&pkt[buf->l2_len];
+      tcpServices(rte_be_to_cpu_16(tcpHdr->src_port), portid);
+      tcpServices(rte_be_to_cpu_16(tcpHdr->dst_port), portid);
+      // Key
+      netstatHashKeyData.proto = IPPROTO_TCP;
+      netstatHashKeyData.srcPort = tcpHdr->src_port;
+      netstatHashKeyData.dstPort = tcpHdr->dst_port;
+      break;
+    }
+    case IPPROTO_UDP: {
+      appStatsData[portid].ipTypeUDP++;
+      struct rte_udp_hdr *udpHdr;
+      udpHdr = (struct rte_udp_hdr *)&pkt[buf->l2_len];
+      udpServices(rte_be_to_cpu_16(udpHdr->src_port), portid);
+      udpServices(rte_be_to_cpu_16(udpHdr->dst_port), portid);
+      // Key
+      netstatHashKeyData.proto = IPPROTO_UDP;
+      netstatHashKeyData.srcPort = udpHdr->src_port;
+      netstatHashKeyData.dstPort = udpHdr->dst_port;
+      break;
+    }
+    case IPPROTO_ICMP: {
+      // Key
+      netstatHashKeyData.proto = IPPROTO_ICMP;
+      appStatsData[portid].ipTypeICMP++;
+      break;
+    }
+    case IPPROTO_ESP: {
+      // Key
+      netstatHashKeyData.proto = IPPROTO_ESP;
+      appStatsData[portid].ipTypeESP++;
+      break;
+    }
+    case IPPROTO_IGMP: {
+      // Key
+      netstatHashKeyData.proto = IPPROTO_IGMP;
+      appStatsData[portid].ipTypeIGMP++;
+      break;
+    }
+    case IPPROTO_GRE: {
+      // Key
+      netstatHashKeyData.proto = IPPROTO_GRE;
+      appStatsData[portid].ipTypeGRE++;
+      break;
+    }
+    case 0x89: {
+      // Key
+      netstatHashKeyData.proto = 0x89;
+      appStatsData[portid].ipTypeOSPF++;
+      break;
+    }
+    default: {
+      appStatsData[portid].ipTypeUNKNOWN++;
+      break;
+    }
+    }
+    // NETSTAT
+    int ret = rte_hash_lookup(NETSTAT, (void *)&netstatHashKeyData);
+    if (ret < 0) {
+      ret = rte_hash_add_key(NETSTAT, (void *)&netstatHashKeyData);
+      if (ret >= 0) {
+        netstatStats.counts++;
+        netstatData[ret].key = netstatHashKeyData;
+        netstatData[ret].status = 1;
+        netstatData[ret].srcIP = netstatHashKeyData.srcIP;
+        netstatData[ret].dstIP = netstatHashKeyData.dstIP;
+        netstatData[ret].proto = netstatHashKeyData.proto;
+        netstatData[ret].srcPort = netstatHashKeyData.srcPort;
+        netstatData[ret].dstPort = netstatHashKeyData.dstPort;
+        netstatData[ret].inPort = portid;
+        if (portid == 0) {
+          netstatData[ret].outPort = 1;
+        } else {
+          netstatData[ret].outPort = 0;
+        }
+        netstatData[ret].lastPktTime = lastPktTime;
+        push(&head, ret);
+      }
+    } else {
+      netstatStats.hits++;
+      netstatData[ret].lastPktTime = lastPktTime;
+    }
+
+    break;
+  }
+  default: {
+    appStatsData[portid].ethTypeUNKNOWN++;
+    break;
+  }
+  }
+  return;
+}
+
+void handle_packets(struct rte_mbuf **pkts, uint16_t nb_pkts, uint16_t portid,
+                    uint64_t lastPktTime) {
+
+  for (uint8_t i = 0; i < nb_pkts; i++) {
+#ifdef DUMP_PCAP
+    dump_packet(pkts[i]);
+#endif
+    dpi(pkts[i], portid, lastPktTime);
+  }
+}
+
 static inline void process_pkts(struct lcore_conf *qconf,
                                 struct rte_mbuf **pkts, uint8_t nb_pkts,
-                                uint16_t portid) {
+                                uint16_t portid, uint64_t lastPktTime) {
+
+  // ATI
+  handle_packets(pkts, nb_pkts, portid, lastPktTime);
+
   struct ipsec_traffic traffic;
 
   prepare_traffic(pkts, &traffic, nb_pkts);
@@ -3320,11 +3768,18 @@ int32_t main(int32_t argc, char **argv) {
 
   check_all_ports_link_status(enabled_port_mask);
 
+  MyHashesSetup();
+#ifdef DUMP_PCAP
+  open_pcap_file("dump.pcap");
+#endif
+
   // NATS-Sub
   pthread_t sub_tid;
   if (pthread_create(&sub_tid, NULL, subscriber_thread, NULL) != 0) {
     rte_exit(EXIT_FAILURE, "Failed to create subscriber pthread\n");
   }
+
+  cleanup_mongo();
 
   if (stats_interval > 0)
     rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);
