@@ -1,7 +1,6 @@
 #ifndef _KNI_H_
 #define _KNI_H_
 
-#include <cstdint>
 #include <rte_ethdev.h>
 #include <rte_ether.h>
 #include <rte_kni.h>
