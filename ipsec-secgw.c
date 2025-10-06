@@ -1316,7 +1316,7 @@ static void handle_packet_arp(struct rte_mbuf *buf) {
     int i = 0;
     int found = 0;
 
-    while (i < num_ips) {
+    while (i < num_my_ips_decimal) {
       if (MY_IPS_DECIMAL[i] == myIPAddrDec) {
         found = 1;
         break;
