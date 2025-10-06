@@ -475,10 +475,10 @@ static void print_stats_cb(__rte_unused void *param) {
            "\nPackets per Rx call:\t\t%16.2f"
            "\nPackets per Tx call:\t\t%16.2f"
            "\nrx_bytes:\t%32" PRIu64 "\ntx_bytes:\t%32" PRIu64
-           "\nrxBytesNormalized:\t%23s"
-           "\ntxBytesNormalized:\t%23s"
-           "\nrxRate:\t\t\t%23.2f Mb/s"
-           "\ntxRate:\t\t\t%23.2f Mb/s",
+           "\nrxBytesNormalized:\t%24s"
+           "\ntxBytesNormalized:\t%24s"
+           "\nrxRate:\t\t\t%18.2f Mb/s"
+           "\ntxRate:\t\t\t%18.2f Mb/s",
            coreid, core_statistics[coreid].rx, core_statistics[coreid].tx,
            core_statistics[coreid].dropped, burst_percent, rx_per_call,
            tx_per_call, core_statistics[coreid].rx_bytes,
