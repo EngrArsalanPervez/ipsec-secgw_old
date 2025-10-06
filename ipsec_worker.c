@@ -2,6 +2,7 @@
  * Copyright(c) 2010-2016 Intel Corporation
  * Copyright (C) 2020 Marvell International Ltd.
  */
+#include <pcap.h>
 #include <rte_acl.h>
 #include <rte_event_eth_tx_adapter.h>
 #include <rte_lpm.h>
@@ -946,26 +947,19 @@ static void ipsec_eventmode_worker(struct eh_conf *conf) {
 int ipsec_launch_one_lcore(void *args) {
   uint32_t lcore_id = rte_lcore_id();
 
-  /* switch (lcore_id) { */
-  /* case 2: */
-  /*   flushHashTablesLcore(); */
-  /*   break; */
-  /* case 3: */
-  /*   logsManagerLcore(); */
-  /*   break; */
-  /* default: */
-  /*   break; */
-  /* } */
-
   if (lcore_id == ipEncryptorType.kni_rx_core) {
-
-    flushHashTablesLcore();
+    pthread_t hash_tid;
+    if (pthread_create(&hash_tid, NULL, flushHashTablesLcore, NULL) != 0) {
+      rte_exit(EXIT_FAILURE, "Failed to create hash pthread\n");
+    }
 
     kni_main(socket_ctx[0].mbuf_pool);
     return 0;
   } else if (lcore_id == ipEncryptorType.kni_tx_core) {
-
-    logsManagerLcore();
+    pthread_t log_tid;
+    if (pthread_create(&log_tid, NULL, logsManagerLcore, NULL) != 0) {
+      rte_exit(EXIT_FAILURE, "Failed to create log pthread\n");
+    }
 
     kni_main(socket_ctx[0].mbuf_pool);
     return 0;
