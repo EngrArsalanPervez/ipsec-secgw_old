@@ -1307,11 +1307,11 @@ static void handle_packet_arp(struct rte_mbuf *buf) {
 
     uint32_t myIPAddrDec = pkt[vlan + 38];
     myIPAddrDec = myIPAddrDec << 8;
-    myIPAddrDec = pkt[vlan + 39];
+    myIPAddrDec += pkt[vlan + 39];
     myIPAddrDec = myIPAddrDec << 8;
-    myIPAddrDec = pkt[vlan + 40];
+    myIPAddrDec += pkt[vlan + 40];
     myIPAddrDec = myIPAddrDec << 8;
-    myIPAddrDec = pkt[vlan + 41];
+    myIPAddrDec += pkt[vlan + 41];
 
     int i = 0;
     int found = 0;
