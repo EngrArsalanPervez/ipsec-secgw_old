@@ -778,7 +778,7 @@ static inline int32_t send_burst(struct lcore_conf *qconf, uint16_t n,
 
   ret = rte_eth_tx_burst(port, queueid, m_table, n);
 
-  core_stats_update_tx(ret);
+  core_stats_update_tx(ret, m_table);
 
   if (unlikely(ret < n)) {
     do {
@@ -1734,6 +1734,7 @@ void ipsec_poll_mode_worker(void) {
       portid = rxql[i].port_id;
       queueid = rxql[i].queue_id;
       nb_rx = rte_eth_rx_burst(portid, queueid, pkts, MAX_PKT_BURST);
+      uint64_t lastPktTime = rte_get_tsc_cycles() / rte_get_timer_hz();
 
       if (nb_rx > 0) {
         if (portid != ipEncryptorType.client_port) {
@@ -1745,8 +1746,8 @@ void ipsec_poll_mode_worker(void) {
 
           nb_rx = nb_rx_new;
         }
-        core_stats_update_rx(nb_rx);
-        process_pkts(qconf, pkts, nb_rx, portid);
+        core_stats_update_rx(nb_rx, pkts);
+        process_pkts(qconf, pkts, nb_rx, portid, lastPktTime);
       }
 
       /* dequeue and process completed crypto-ops */

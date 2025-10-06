@@ -140,7 +140,7 @@ static inline uint8_t is_unprotected_port(uint16_t port_id) {
   return unprotected_port_mask & (1 << port_id);
 }
 
-static inline void core_stats_update_rx(int n) {
+static inline void core_stats_update_rx(int n, struct rte_mbuf **pkts) {
   int lcore_id = rte_lcore_id();
   core_statistics[lcore_id].rx += n;
   core_statistics[lcore_id].rx_call++;
@@ -153,7 +153,7 @@ static inline void core_stats_update_rx(int n) {
   }
 }
 
-static inline void core_stats_update_tx(int n) {
+static inline void core_stats_update_tx(int n, struct rte_mbuf **pkts) {
   int lcore_id = rte_lcore_id();
   core_statistics[lcore_id].tx += n;
   core_statistics[lcore_id].tx_call++;
