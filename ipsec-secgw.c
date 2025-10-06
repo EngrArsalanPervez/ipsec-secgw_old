@@ -375,7 +375,7 @@ void printTime(void) {
   }
   sprintf(appTime.time, "%04uY-%02uM-%02uD %02uH:%02um:%02us", appTime.year,
           appTime.mon, appTime.day, appTime.hrs, appTime.min, appTime.sec);
-  printf("\nTime elapsed:%34s\n", appTime.time);
+  printf("Time elapsed:%34s\n", appTime.time);
 }
 
 /*
@@ -437,7 +437,7 @@ static void print_stats_cb(__rte_unused void *param) {
   /* Clear screen and move to top left */
   printf("%s%s", clr, topLeft);
 
-  printf("\nCore statistics ====================================");
+  printf("Core statistics ====================================");
 
   for (coreid = 0; coreid < ipEncryptorType.total_ports; coreid++) {
     /* skip disabled cores */
