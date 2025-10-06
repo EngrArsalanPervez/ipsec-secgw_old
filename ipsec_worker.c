@@ -957,8 +957,16 @@ int ipsec_launch_one_lcore(void *args) {
   /*   break; */
   /* } */
 
-  if (lcore_id == ipEncryptorType.kni_rx_core ||
-      lcore_id == ipEncryptorType.kni_tx_core) {
+  if (lcore_id == ipEncryptorType.kni_rx_core) {
+
+    flushHashTablesLcore();
+
+    kni_main(socket_ctx[0].mbuf_pool);
+    return 0;
+  } else if (lcore_id == ipEncryptorType.kni_tx_core) {
+
+    logsManagerLcore();
+
     kni_main(socket_ctx[0].mbuf_pool);
     return 0;
   }
