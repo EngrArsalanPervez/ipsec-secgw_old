@@ -1305,13 +1305,9 @@ static void handle_packet_arp(struct rte_mbuf *buf) {
   if (pkt[vlan + 20] == 0x00 && pkt[vlan + 21] == 0x01) {
     // ARP Request
 
-    uint32_t myIPAddrDec = pkt[vlan + 38];
-    myIPAddrDec = myIPAddrDec << 8;
-    myIPAddrDec += pkt[vlan + 39];
-    myIPAddrDec = myIPAddrDec << 8;
-    myIPAddrDec += pkt[vlan + 40];
-    myIPAddrDec = myIPAddrDec << 8;
-    myIPAddrDec += pkt[vlan + 41];
+    uint32_t myIPAddrDec =
+        ((uint32_t)pkt[vlan + 38] << 24) | ((uint32_t)pkt[vlan + 39] << 16) |
+        ((uint32_t)pkt[vlan + 40] << 8) | ((uint32_t)pkt[vlan + 41]);
 
     int i = 0;
     int found = 0;
@@ -1323,8 +1319,6 @@ static void handle_packet_arp(struct rte_mbuf *buf) {
       }
       i++;
     }
-
-    printf("FOUND:%u\n", myIPAddrDec);
 
     if (found) { // Dst MAC
       pkt[0] = pkt[6];
@@ -1362,9 +1356,9 @@ static void handle_packet_arp(struct rte_mbuf *buf) {
 
       // Sender IP Addr
       pkt[vlan + 28] = pkt[vlan + 38];
-      pkt[vlan + 29] = pkt[vlan + 38];
-      pkt[vlan + 30] = pkt[vlan + 38];
-      pkt[vlan + 31] = pkt[vlan + 38];
+      pkt[vlan + 29] = pkt[vlan + 39];
+      pkt[vlan + 30] = pkt[vlan + 40];
+      pkt[vlan + 31] = pkt[vlan + 41];
 
       // Target MAC Addr
       pkt[vlan + 32] = pkt[0];
