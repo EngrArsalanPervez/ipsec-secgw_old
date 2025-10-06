@@ -224,6 +224,7 @@ int main_loop(void *arg) {
       if (f_pause)
         continue;
       kni_egress(kni_port_params_array[i], &rt);
+      rte_delay_us_sleep(100); // sleep for 100 µs
     }
   } else
     RTE_LOG(INFO, APP, "Lcore %u has nothing to do\n", lcore_id);

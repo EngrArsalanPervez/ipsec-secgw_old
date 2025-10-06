@@ -1242,6 +1242,7 @@ static inline void route6_pkts(struct rt_ctx *rt_ctx, struct rte_mbuf *pkts[],
 void *flushHashTablesLcore(void *arg) {
   while (!force_quit) {
     flushHashTable();
+    rte_delay_us_sleep(1000); // sleep for 1 ms
   }
 }
 void *logsManagerLcore(void *arg) {
@@ -1250,6 +1251,7 @@ void *logsManagerLcore(void *arg) {
     if (ret >= 0) {
       insertNetstatToDB(&netstatData[ret]);
     }
+    rte_delay_us_sleep(1000); // sleep for 1 ms
   }
 }
 
