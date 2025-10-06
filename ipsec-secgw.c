@@ -514,13 +514,12 @@ static void print_stats_cb(__rte_unused void *param) {
   printf("\nKNI statistics =====================================");
   print_kni_stats();
 
-  printf("\nNATS================================================\n");
+  printf("\nNATS statistics===================================\n");
   printf("IKE String_C2S: %s\n", ike_string[0]);
   printf("IKE String_S2C: %s\n", ike_string[1]);
-  printf("======================================================\n");
+  printf("App Statistics======================================\n");
   /* printAppStats(); */
   updateAppStatsToDB();
-  printf("======================================================\n");
 
   // Interface0 Stats
   struct interfaceStatsStruct interfaceStatsDate = {0};
@@ -555,12 +554,11 @@ static void print_stats_cb(__rte_unused void *param) {
   sprintf(deviceStatsDate.totalTxRate, "%.2f Mb/s", total_txRate);
   updateDeviceStatsToDB(&deviceStatsDate);
 
-  // Print HashStats
+  printf("Hash statistics=====================================\n");
   printf("NETSTAT_COUNT:%33lu\n"
          "NETSTAT_HITS:%34lu\n",
          netstatStats.counts, netstatStats.hits);
-
-  // Print Time
+  printf("Time statistics=====================================\n");
   printTime();
   updateTimeToDB(&appTime);
 
