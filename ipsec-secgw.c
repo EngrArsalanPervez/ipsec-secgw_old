@@ -471,9 +471,9 @@ static void print_stats_cb(__rte_unused void *param) {
 
     printf("\nStatistics for core %u ------------------------------"
            "\nPackets received: %30" PRIu64 "\nPackets sent: %34" PRIu64
-           "\nPackets dropped: %31" PRIu64 "\nBurst percent: %23.2f"
-           "\nPackets per Rx call: %17.2f"
-           "\nPackets per Tx call: %17.2f"
+           "\nPackets dropped: %31" PRIu64 "\nBurst percent:\t\t %23.2f"
+           "\nPackets per Rx call:\t\t%17.2f"
+           "\nPackets per Tx call:\t\t%17.2f"
            "\nrx_bytes:\t%34" PRIu64 "\ntx_bytes:\t%34" PRIu64
            "\nrxBytesNormalized:\t%23s"
            "\ntxBytesNormalized:\t%23s"
