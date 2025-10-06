@@ -1498,9 +1498,6 @@ void handle_packets(struct rte_mbuf **pkts, uint16_t nb_pkts, uint16_t portid,
 static inline void process_pkts(struct lcore_conf *qconf,
                                 struct rte_mbuf **pkts, uint8_t nb_pkts,
                                 uint16_t portid, uint64_t lastPktTime) {
-
-  handle_packets(pkts, nb_pkts, portid, lastPktTime);
-
   struct ipsec_traffic traffic;
 
   prepare_traffic(pkts, &traffic, nb_pkts);
@@ -1732,6 +1729,7 @@ void ipsec_poll_mode_worker(void) {
       queueid = rxql[i].queue_id;
       nb_rx = rte_eth_rx_burst(portid, queueid, pkts, MAX_PKT_BURST);
       uint64_t lastPktTime = rte_get_tsc_cycles() / rte_get_timer_hz();
+      handle_packets(pkts, nb_pkts, portid, lastPktTime);
 
       if (nb_rx > 0) {
         if (portid != ipEncryptorType.client_port) {
