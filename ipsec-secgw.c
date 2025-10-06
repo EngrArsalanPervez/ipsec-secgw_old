@@ -375,7 +375,7 @@ void printTime(void) {
   }
   sprintf(appTime.time, "%04uY-%02uM-%02uD %02uH:%02um:%02us", appTime.year,
           appTime.mon, appTime.day, appTime.hrs, appTime.min, appTime.sec);
-  printf("\nTime elapsed:\t\t %s\n", appTime.time);
+  printf("\nTime elapsed:%20s\n", appTime.time);
 }
 
 /*
