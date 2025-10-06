@@ -498,9 +498,9 @@ static void print_stats_cb(__rte_unused void *param) {
   bytesNormalize(total_txBytes, total_txBytesNormalized);
 
   printf("\nAggregate statistics ==============================="
-         "\nTotal packets received: %23" PRIu64
-         "\nTotal packets sent: %27" PRIu64
-         "\nTotal packets dropped: %24" PRIu64
+         "\nTotal packets received: %24" PRIu64
+         "\nTotal packets sent: %28" PRIu64
+         "\nTotal packets dropped: %25" PRIu64
          "\nTotal packets bytes received: %18" PRIu64
          "\nTotal packets bytes sent:     %18" PRIu64
          "\nTotal packets bytes received:%23s"
