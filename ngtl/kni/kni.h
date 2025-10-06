@@ -11,18 +11,15 @@
 #define LCLOSE 1
 
 #define IP_ENCRYPTOR_TYPE HCLOSE
+#define CLIENT_PORT 0
 
 #if IP_ENCRYPTOR_TYPE == HCLOSE
 #define KNI_RX_CORE 4
 #define KNI_TX_CORE 5
-#define CLIENT_PORT 0
-#define TUNNEL_PORT 1
 #define vEth0_0_MAC {0x02, 0x00, 0x00, 0x00, 0x00, 0x01}
 #elif IP_ENCRYPTOR_TYPE == LCLOSE
 #define KNI_RX_CORE 2
 #define KNI_TX_CORE 3
-#define CLIENT_PORT 1
-#define TUNNEL_PORT 0
 #define vEth0_0_MAC {0x02, 0x00, 0x00, 0x00, 0x00, 0x02}
 #endif
 

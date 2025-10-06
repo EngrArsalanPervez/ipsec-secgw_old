@@ -546,8 +546,7 @@ int kni_main(struct rte_mempool *shared_pool) {
     if (ret < 0)
       rte_exit(EXIT_FAILURE, "Invalid KNI config\n");
 
-    /* kni_alloc(CLIENT_PORT); */
-    kni_alloc(0);
+    kni_alloc(CLIENT_PORT);
 
     kni_configured = 1;
 
