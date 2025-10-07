@@ -56,6 +56,7 @@ struct tcpServicesStruct {
 };
 
 struct udpServicesStruct {
+  uint64_t udpTypeIKEv2;
   uint64_t udpTypeDNS;
   uint64_t udpTypeDHCP;
   uint64_t udpTypeNTP;

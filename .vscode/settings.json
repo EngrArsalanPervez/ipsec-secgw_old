@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "*.php": "php",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "stats.h": "c"
     }
 }

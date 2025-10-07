@@ -37,6 +37,7 @@
 
 #include "../../ipsec.h"
 #include "../../ipsec_worker.h"
+#include "stats.h"
 
 struct ipEncryptorTypeStruct ipEncryptorType = {0};
 
@@ -130,6 +131,8 @@ void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts,
       // Send Out
 
       uint16_t tunnel_port = get_route(m, rt, PKT_TYPE_PLAIN_IPV4);
+
+      appStatsData[tunnel_port].udpServicesData.udpTypeIKEv2++;
 
       /* Burst tx to eth */
       uint8_t nb_tx = rte_eth_tx_burst(tunnel_port, 1, &m, 1);
