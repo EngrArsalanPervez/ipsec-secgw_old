@@ -1319,6 +1319,7 @@ static void handle_packet_arp(struct rte_mbuf *buf) {
       }
       i++;
     }
+    printf("FOUND:%u:%u\n", found, myIPAddrDec);
 
     if (found) { // Dst MAC
       pkt[0] = pkt[6];
