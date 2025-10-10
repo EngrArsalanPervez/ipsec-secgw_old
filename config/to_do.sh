@@ -6,3 +6,14 @@
 3. Key Update
 4. Established Tunnel Status
 4. Netstat Time and Ports
+
+sudo systemctl stop strongswan
+sudo pkill charon
+sudo pkill charon-systemd
+sudo netstat -ulnp | grep -E '500|4500'
+
+sudo systemctl start strongswan
+sudo systemctl status strongswan
+
+systemctl disable strongswan
+systemctl disable strongswan-starter
