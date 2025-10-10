@@ -5,7 +5,7 @@ insmod ./build/kernel/linux/kni/rte_kni.ko carrier=on
 ./usertools/dpdk-devbind.py --bind=igb_uio enp2s0f0
 ./usertools/dpdk-devbind.py --bind=igb_uio enp2s0f1
 echo 1024 >/sys/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages
-cd examples/ipsec-gw/
+cd examples/ipsec-secgw/
 ./build/ipsec-secgw -c 0xf -n 4 --socket-mem 1024,0 --vdev "crypto_openssl" -- -p 0x3 -P -u 0x2 --config="(0,0,0),(1,0,1)" -d LCLOS -f ./IPE.cfg --transfer-mode poll -t 1
 until ipsec-secgw; do
   echo "Server 'ipsec-secgw' crashed with exit code $?.  Respawning.." >&2
