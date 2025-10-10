@@ -21,33 +21,37 @@ if [ $? != 0 ]; then
   tmux new-window -t $SESSION_NAME:2 -n "config"
   tmux send-keys -t $SESSION_NAME:2 "cd /home/network/Desktop/dpdk/examples/ipsec-secgw/config" Enter
 
-  # --- Tab 3: Node ---
-  tmux new-window -t $SESSION_NAME:3 -n "IPE.cfg"
-  tmux send-keys -t $SESSION_NAME:3 "cat /home/network/Desktop/dpdk/examples/ipsec-secgw/config/IPE.cfg" Enter
+  # Create the :3 window (tab)
+  tmux new-window -t $SESSION_NAME:3 -n "dpdk.sh"
+  tmux send-keys -t $SESSION_NAME:3 "nvim /home/network/Desktop/dpdk/examples/ipsec-secgw/config/dpdk.sh" Enter
 
-  # --- Tab 4: Node ---
-  tmux new-window -t $SESSION_NAME:4 -n "ipsec.conf"
-  tmux send-keys -t $SESSION_NAME:4 "cat /etc/ipsec.conf" Enter
+  # Create the :4 window (tab)
+  tmux new-window -t $SESSION_NAME:4 -n "IPE.cfg"
+  tmux send-keys -t $SESSION_NAME:4 "cat /home/network/Desktop/dpdk/examples/ipsec-secgw/config/IPE.cfg" Enter
 
-  # --- Tab 5: Node ---
-  tmux new-window -t $SESSION_NAME:5 -n "ipsec.secrets"
-  tmux send-keys -t $SESSION_NAME:5 "cat /etc/ipsec.secrets" Enter
+  # Create the :5 window (tab)
+  tmux new-window -t $SESSION_NAME:5 -n "ipsec.conf"
+  tmux send-keys -t $SESSION_NAME:5 "cat /etc/ipsec.conf" Enter
 
   # Create the :6 window (tab)
-  tmux new-window -t $SESSION_NAME:6 -n "DB"
-  tmux send-keys -t $SESSION_NAME:6 "mongosh" Enter
+  tmux new-window -t $SESSION_NAME:6 -n "ipsec.secrets"
+  tmux send-keys -t $SESSION_NAME:6 "cat /etc/ipsec.secrets" Enter
 
-  # --- Tab 7: IPSec ---
-  tmux new-window -t $SESSION_NAME:7 -n "ipsec.py"
-  tmux send-keys -t $SESSION_NAME:7 "cd /home/network/Desktop/dpdk/examples/ipsec-secgw/scripts" Enter
-  tmux send-keys -t $SESSION_NAME:7 "python3 ipsec_status.py" Enter
+  # Create the :7 window (tab)
+  tmux new-window -t $SESSION_NAME:7 -n "DB"
+  tmux send-keys -t $SESSION_NAME:7 "mongosh" Enter
 
-  # --- Tab 8: vEth ---
-  tmux new-window -t $SESSION_NAME:8 -n "vEth"
+  # Create the :8 window (tab)
+  tmux new-window -t $SESSION_NAME:8 -n "ipsec.py"
   tmux send-keys -t $SESSION_NAME:8 "cd /home/network/Desktop/dpdk/examples/ipsec-secgw/scripts" Enter
-  tmux send-keys -t $SESSION_NAME:8 "python3 vEth0_0.py" Enter
+  tmux send-keys -t $SESSION_NAME:8 "python3 ipsec_status.py" Enter
 
   # Create the :9 window (tab)
+  tmux new-window -t $SESSION_NAME:9 -n "vEth"
+  tmux send-keys -t $SESSION_NAME:9 "cd /home/network/Desktop/dpdk/examples/ipsec-secgw/scripts" Enter
+  tmux send-keys -t $SESSION_NAME:9 "python3 vEth0_0.py" Enter
+
+  # Create the :2 window (tab)
   tmux new-window -t $SESSION_NAME:9 -n "htop"
   tmux send-keys -t $SESSION_NAME:9 "htop" Enter
 
