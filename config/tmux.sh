@@ -27,7 +27,7 @@ if [ $? != 0 ]; then
 
   # Create the :4 window (tab)
   tmux new-window -t $SESSION_NAME:4 -n "IPE.cfg"
-  tmux send-keys -t $SESSION_NAME:4 "cat /home/network/Desktop/dpdk/examples/ipsec-secgw/config/IPE.cfg" Enter
+  tmux send-keys -t $SESSION_NAME:4 "cat /home/network/Desktop/dpdk/examples/ipsec-secgw/IPE.cfg" Enter
 
   # Create the :5 window (tab)
   tmux new-window -t $SESSION_NAME:5 -n "ipsec.conf"
