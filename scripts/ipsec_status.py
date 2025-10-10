@@ -10,7 +10,7 @@ try:
     client = MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=2000)
     db = client["IPSec"]
     collection = db["policies"]
-    client.admin.command('ping')
+    client.admin.command("ping")
 except errors.ConnectionFailure:
     print("❌ MongoDB connection failed — ensure MongoDB is running.")
     collection = None
@@ -27,7 +27,9 @@ def log(msg, level="INFO"):
 def is_ipsec_secgw_running():
     """Check if ipsec-secgw process is running."""
     try:
-        result = subprocess.run(["ps", "aux"], capture_output=True, text=True, check=True)
+        result = subprocess.run(
+            ["ps", "aux"], capture_output=True, text=True, check=True
+        )
         for line in result.stdout.splitlines():
             if "ipsec-secgw" in line and "grep" not in line:
                 return True
@@ -51,7 +53,9 @@ def updateConn():
     try:
         log("Marking all connectivity fields as 'Not Connected'...")
         result = collection.update_many({}, {"$set": {"connectivity": "Not Connected"}})
-        log(f"Updated {result.modified_count} document(s) — connectivity = 'Not Connected'")
+        log(
+            f"Updated {result.modified_count} document(s) — connectivity = 'Not Connected'"
+        )
     except errors.PyMongoError as e:
         log(f"MongoDB update failed: {e}", "ERROR")
     except Exception as e:
@@ -61,7 +65,9 @@ def updateConn():
 def parse_ipsec_status_and_update_mongo():
     """Parse IPsec tunnel status and update MongoDB."""
     try:
-        result = subprocess.run(["ipsec", "status"], capture_output=True, text=True, check=True)
+        result = subprocess.run(
+            ["ipsec", "status"], capture_output=True, text=True, check=True
+        )
         output = result.stdout.strip()
 
         os.system("clear")
@@ -75,12 +81,11 @@ def parse_ipsec_status_and_update_mongo():
             return
 
         established_matches = re.findall(
-            r'ESTABLISHED\s+([\d\w\s]+ago),\s+([\d\.]+)\[.*?\]\.\.\.([\d\.]+)\[.*?\]',
-            output
+            r"ESTABLISHED\s+([\d\w\s]+ago),\s+([\d\.]+)\[.*?\]\.\.\.([\d\.]+)\[.*?\]",
+            output,
         )
         connecting_matches = re.findall(
-            r'CONNECTING.*?([\d\.]+)\[.*?\]\.\.\.([\d\.]+)\[.*?\]',
-            output
+            r"CONNECTING.*?([\d\.]+)\[.*?\]\.\.\.([\d\.]+)\[.*?\]", output
         )
 
         if not established_matches and not connecting_matches:
@@ -93,8 +98,7 @@ def parse_ipsec_status_and_update_mongo():
             if collection is not None:
                 try:
                     result = collection.update_many(
-                        {"dstIPSAIN": src_ip},
-                        {"$set": {"connectivity": status_string}}
+                        {"dstIPSAIN": src_ip}, {"$set": {"connectivity": status_string}}
                     )
                     if result.modified_count > 0:
                         log(f"Updated {result.modified_count} document(s) for {src_ip}")
@@ -108,8 +112,7 @@ def parse_ipsec_status_and_update_mongo():
             if collection is not None:
                 try:
                     result = collection.update_many(
-                        {"dstIPSAIN": src_ip},
-                        {"$set": {"connectivity": "CONNECTING"}}
+                        {"dstIPSAIN": src_ip}, {"$set": {"connectivity": "CONNECTING"}}
                     )
                     if result.modified_count > 0:
                         log(f"Updated {result.modified_count} document(s) for {src_ip}")
@@ -140,7 +143,9 @@ def continuous_monitor(interval=5):
                 running = is_ipsec_secgw_running()
                 if running:
                     if not app_running:
-                        log("ipsec-secgw detected — waiting 10 seconds before monitoring...")
+                        log(
+                            "ipsec-secgw detected — waiting 10 seconds before monitoring..."
+                        )
                         time.sleep(10)
                         app_running = True
                     parse_ipsec_status_and_update_mongo()
@@ -168,3 +173,4 @@ def continuous_monitor(interval=5):
 
 if __name__ == "__main__":
     continuous_monitor(interval=5)
+
