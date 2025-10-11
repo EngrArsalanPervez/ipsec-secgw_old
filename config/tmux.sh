@@ -43,12 +43,12 @@ if [ $? != 0 ]; then
 
   # Create the :8 window (tab)
   tmux new-window -t $SESSION_NAME:8 -n "ipsec.py"
-  tmux send-keys -t $SESSION_NAME:8 "cd /home/network/Desktop/dpdk/examples/ipsec-secgw/scripts" Enter
+  tmux send-keys -t $SESSION_NAME:8 "cd /home/network/Desktop/bootstartup/scripts" Enter
   tmux send-keys -t $SESSION_NAME:8 "python3 ipsec_status.py" Enter
 
   # Create the :9 window (tab)
   tmux new-window -t $SESSION_NAME:9 -n "vEth"
-  tmux send-keys -t $SESSION_NAME:9 "cd /home/network/Desktop/dpdk/examples/ipsec-secgw/scripts" Enter
+  tmux send-keys -t $SESSION_NAME:9 "cd /home/network/Desktop/bootstartup/scripts" Enter
   tmux send-keys -t $SESSION_NAME:9 "python3 vEth0_0.py" Enter
 
   # Create the :2 window (tab)
