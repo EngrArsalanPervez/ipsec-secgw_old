@@ -107,6 +107,10 @@ void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts,
 
   for (i = 0; i < nb_rx; i++) {
     m = pkts[i];
+
+    rte_pktmbuf_free(m);
+    continue;
+
     struct rte_ether_hdr *eth = rte_pktmbuf_mtod(m, struct rte_ether_hdr *);
 
     if (rte_be_to_cpu_16(eth->ether_type) != RTE_ETHER_TYPE_IPV4) {
