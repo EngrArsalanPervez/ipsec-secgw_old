@@ -1,7 +1,7 @@
 #include "db.h"
 
 // DB Collections
-#define DB_TOTALCOLLECTIONS 5
+#define DB_TOTALCOLLECTIONS 6
 #define PORT_STATS 0
 #define INTERFACE_STATS 1
 #define DEVICE_STATS 2
