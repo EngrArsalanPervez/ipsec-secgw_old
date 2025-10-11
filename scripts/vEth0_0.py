@@ -4,6 +4,15 @@ import os
 from datetime import datetime
 from pymongo import MongoClient
 
+
+ThisDevice = "HCLOS"  # or "LCLOS"
+
+if ThisDevice == "HCLOS":
+    MAC = "02:00:00:00:00:02"
+elif ThisDevice == "LCLOS":
+    MAC = "02:00:00:00:00:01"
+
+
 # --- MongoDB setup ---
 client = MongoClient("mongodb://localhost:27017/")
 db = client["IPSec"]
@@ -88,49 +97,50 @@ def ensure_interface_up(iface):
         log("ERROR", f"Failed to bring up interface {iface}: {e}", RED)
 
 
-def ip_exists(ip_with_mask, iface):
+def ip_exists(src_ip, iface):
     """Check if IP already exists on interface."""
     try:
         result = subprocess.run(
             ["ip", "addr", "show", "dev", iface], capture_output=True, text=True
         )
-        return ip_with_mask.split("/")[0] in result.stdout
+        return src_ip.split("/")[0] in result.stdout
     except Exception as e:
-        log("ERROR", f"Failed to check IP {ip_with_mask} on {iface}: {e}", RED)
+        log("ERROR", f"Failed to check IP {src_ip} on {iface}: {e}", RED)
         return False
 
 
-def arp_exists(ip):
+def arp_exists(dst_ip):
     """Check if ARP entry exists."""
     try:
         result = subprocess.run(["ip", "neigh", "show"], capture_output=True, text=True)
-        return ip in result.stdout
+        return dst_ip in result.stdout
     except Exception as e:
-        log("ERROR", f"Failed to check ARP entry for {ip}: {e}", RED)
+        log("ERROR", f"Failed to check ARP entry for {dst_ip}: {e}", RED)
         return False
 
 
 def apply_network_settings():
     """Fetch IP/ARP entries from DB and apply."""
     try:
-        fields_to_fetch = {"_id": 0, "dstIPSAIN": 1}
+        fields_to_fetch = {"_id": 0, "dstIPSAOUT": 1, "srcIPSAOUT": 1}
         documents = collection.find({}, fields_to_fetch)
 
         for doc in documents:
-            ip = doc.get("dstIPSAIN")
+            src_ip = doc.get("dstIPSAOUT")
+            dst_ip = doc.get("srcIPSAOUT")
 
-            if ip == "":
+            if src_ip == "" or dst_ip == "":
                 log("ERROR", f"Skipping invalid document: {doc}", RED)
                 continue
 
             # --- Ensure /24 mask is appended if missing ---
-            if "/" not in ip:
-                ip += "/24"
+            if "/" not in src_ip:
+                src_ip += "/24"
 
             print(f"\n{BOLD}=========================================={RESET}")
             log(
                 "INFO",
-                f"Processing Document:\n  ➤ dstIPNWSPOUT: {ip}\n  ➤ srcIPSAOUT: {ip}",
+                f"Processing Document:\n  ➤ dstIPNWSPOUT: {src_ip}\n  ➤ dstIPSAOUT: {src_ip}",
                 CYAN,
             )
             print(f"{BOLD}=========================================={RESET}")
@@ -138,23 +148,20 @@ def apply_network_settings():
             ensure_interface_up(interface)
 
             # --- Apply IP to interface ---
-            if not ip_exists(ip, interface):
+            if not ip_exists(src_ip, interface):
                 run_command(
-                    ["sudo", "ip", "addr", "add", ip, "dev", interface], show=False
+                    ["sudo", "ip", "addr", "add", src_ip, "dev", interface], show=False
                 )
-                log("INFO", f"Added IP {ip} to {interface}", GREEN)
+                log("INFO", f"Added IP {src_ip} to {interface}", GREEN)
             else:
-                log("INFO", f"IP {ip} already exists on {interface}", YELLOW)
+                log("INFO", f"IP {src_ip} already exists on {interface}", YELLOW)
 
-            # --- Add ARP entry for source IP ---
-            ip_no_mask = ip.split("/")[0]
-            if not arp_exists(ip_no_mask):
-                run_command(
-                    ["sudo", "arp", "-s", ip_no_mask, "02:00:00:00:00:01"], show=False
-                )
-                log("INFO", f"Added ARP entry for {ip_no_mask}", GREEN)
+            # --- Add ARP entry for dst IP ---
+            if not arp_exists(dst_ip):
+                run_command(["sudo", "arp", "-s", dst_ip, MAC], show=False)
+                log("INFO", f"Added ARP entry for {dst_ip}", GREEN)
             else:
-                log("INFO", f"ARP entry for {ip_no_mask} already exists", YELLOW)
+                log("INFO", f"ARP entry for {dst_ip} already exists", YELLOW)
 
     except Exception as e:
         log("ERROR", f"Unexpected error in apply_network_settings(): {e}", RED)
