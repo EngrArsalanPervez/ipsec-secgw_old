@@ -232,7 +232,7 @@ void udpServices(uint16_t port, uint16_t portid) {
   switch (port) {
   case 500:
   case 4500:
-    /* appStatsData[portid].udpServicesData.udpTypeIKEv2++; */
+    appStatsData[portid].udpServicesData.udpTypeIKEv2++;
     break;
   case 53:
     appStatsData[portid].udpServicesData.udpTypeDNS++;
