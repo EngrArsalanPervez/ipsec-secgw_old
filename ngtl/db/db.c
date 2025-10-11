@@ -71,8 +71,6 @@ void updateTimeToDB(struct appTimeStruct *appTime) {
   bson_t *update = NULL;
   bson_t *query = NULL;
   query = BCON_NEW("id", BCON_INT32(1));
-  printf("totalSecondsElapsed:%lu\n", appTime->totalSecondsElapsed);
-  printf("time:%s\n", appTime->time);
   update =
       BCON_NEW("$set", "{", "upInt", BCON_DOUBLE(appTime->totalSecondsElapsed),
                "upTime", BCON_UTF8(appTime->time), "}");
