@@ -561,7 +561,7 @@ static void print_stats_cb(__rte_unused void *param) {
          netstatStats.counts, netstatStats.hits);
   printf("Time statistics=====================================\n");
   printTime();
-  updateTimeToDB(&appTime);
+  /* updateTimeToDB(&appTime); */
 
   rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);
 }
