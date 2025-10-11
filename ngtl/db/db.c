@@ -67,7 +67,6 @@ void init_mongo_connection(void) {
 }
 
 void updateTimeToDB(struct appTimeStruct *appTime) {
-  return;
   bson_error_t error;
   bson_t *update = NULL;
   bson_t *query = NULL;
