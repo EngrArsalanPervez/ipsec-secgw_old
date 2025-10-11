@@ -10,7 +10,7 @@ tmux has-session -t $SESSION_NAME 2>/dev/null
 if [ $? != 0 ]; then
   # Create the :0 window (tab)
   tmux new-session -d -s $SESSION_NAME -n "DPDK"
-  tmux send-keys -t $SESSION_NAME:0 "cd /home/network/Desktop/dpdk/examples/ipsec-secgw/config" Enter
+  tmux send-keys -t $SESSION_NAME:0 "cd /home/network/Desktop/bootstartup/" Enter
   tmux send-keys -t $SESSION_NAME:0 "./dpdk.sh" Enter
 
   # Create the :1 window (tab)
@@ -23,7 +23,7 @@ if [ $? != 0 ]; then
 
   # Create the :3 window (tab)
   tmux new-window -t $SESSION_NAME:3 -n "dpdk.sh"
-  tmux send-keys -t $SESSION_NAME:3 "nvim /home/network/Desktop/dpdk/examples/ipsec-secgw/config/dpdk.sh" Enter
+  tmux send-keys -t $SESSION_NAME:3 "nvim /home/network/Desktop/bootstartup/dpdk.sh" Enter
 
   # Create the :4 window (tab)
   tmux new-window -t $SESSION_NAME:4 -n "IPE.cfg"
