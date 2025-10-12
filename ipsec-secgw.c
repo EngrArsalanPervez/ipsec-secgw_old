@@ -390,7 +390,7 @@ void printTime(void) {
 
 /* Recreate crypto session with new keys */
 static int recreate_crypto_session(struct ipsec_sa *sa, uint8_t socket_id) {
-    struct rte_cryptodev_sym_session *old_sess = sa->crypto_session;
+    // struct rte_cryptodev_sym_session *old_sess = sa->crypto_session;
     struct rte_cryptodev_sym_session *new_sess;
     struct rte_crypto_sym_xform *cipher_xform, *auth_xform;
     struct rte_crypto_sym_xform xform[2];
@@ -401,24 +401,25 @@ static int recreate_crypto_session(struct ipsec_sa *sa, uint8_t socket_id) {
     /* Prepare transformation chain based on SA configuration */
     memset(xform, 0, sizeof(xform));
     
-    if (sa->aead_algo != RTE_CRYPTO_AEAD_ALGO_NOT_SPECIFIED) {
-        /* AEAD mode (e.g., AES-GCM) */
-        xform[0].type = RTE_CRYPTO_SYM_XFORM_AEAD;
-        xform[0].aead.algo = sa->aead_algo;
-        xform[0].aead.key.data = sa->cipher_key;
-        xform[0].aead.key.length = sa->cipher_key_len;
-        xform[0].aead.iv.offset = IV_OFFSET;
-        xform[0].aead.iv.length = sa->iv_len;
-        xform[0].aead.digest_length = sa->digest_len;
-        xform[0].aead.aad_length = sa->aad_len;
+    // if (sa->aead_algo != RTE_CRYPTO_AEAD_ALGO_NOT_SPECIFIED) {
+    //     /* AEAD mode (e.g., AES-GCM) */
+    //     xform[0].type = RTE_CRYPTO_SYM_XFORM_AEAD;
+    //     xform[0].aead.algo = sa->aead_algo;
+    //     xform[0].aead.key.data = sa->cipher_key;
+    //     xform[0].aead.key.length = sa->cipher_key_len;
+    //     xform[0].aead.iv.offset = IV_OFFSET;
+    //     xform[0].aead.iv.length = sa->iv_len;
+    //     xform[0].aead.digest_length = sa->digest_len;
+    //     xform[0].aead.aad_length = sa->aad_len;
         
-        if (sa->flags & IP4_TUNNEL || sa->flags & IP6_TUNNEL) {
-            xform[0].aead.op = (sa->direction == RTE_SECURITY_IPSEC_SA_DIR_EGRESS) ?
-                               RTE_CRYPTO_AEAD_OP_ENCRYPT : RTE_CRYPTO_AEAD_OP_DECRYPT;
-        }
-        xform[0].next = NULL;
+    //     if (sa->flags & IP4_TUNNEL || sa->flags & IP6_TUNNEL) {
+    //         xform[0].aead.op = (sa->direction == RTE_SECURITY_IPSEC_SA_DIR_EGRESS) ?
+    //                            RTE_CRYPTO_AEAD_OP_ENCRYPT : RTE_CRYPTO_AEAD_OP_DECRYPT;
+    //     }
+    //     xform[0].next = NULL;
         
-    } else {
+    // } else 
+    {
         /* Cipher + Auth mode (e.g., AES-CBC + HMAC-SHA256) */
         
         /* Setup based on direction */
@@ -475,10 +476,10 @@ static int recreate_crypto_session(struct ipsec_sa *sa, uint8_t socket_id) {
     }
     
     /* Clear and free old session */
-    if (old_sess != NULL) {
-        rte_cryptodev_sym_session_clear(sa->portid, old_sess);
-        rte_cryptodev_sym_session_free(old_sess);
-    }
+    // if (old_sess != NULL) {
+    //     rte_cryptodev_sym_session_clear(sa->portid, old_sess);
+    //     rte_cryptodev_sym_session_free(old_sess);
+    // }
     
     /* Update SA with new session */
     sa->crypto_session = new_sess;
