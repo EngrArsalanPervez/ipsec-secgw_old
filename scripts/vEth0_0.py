@@ -154,6 +154,7 @@ def apply_network_settings():
 
             # --- Add ARP entry for dst IP ---
             if not arp_exists(dst_ip):
+                print(MAC)
                 run_command(["sudo", "arp", "-s", dst_ip, MAC], show=False)
                 log("INFO", f"Added ARP entry for {dst_ip}", GREEN)
             else:
@@ -179,6 +180,8 @@ def main():
         MAC = "02:00:00:00:00:02"
     elif ThisDevice == "LCLOS":
         MAC = "02:00:00:00:00:01"
+
+    print(MAC)
 
     print("Starting continuous IPsec monitor...")
     print(f"Device Type: {ThisDevice}")
