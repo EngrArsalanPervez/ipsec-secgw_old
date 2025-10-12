@@ -482,7 +482,7 @@ static int recreate_crypto_session(struct ipsec_sa *sa, uint8_t socket_id) {
     // }
     
     /* Update SA with new session */
-    sa->crypto_session = new_sess;
+    // sa->crypto_session = new_sess;
     
     printf("✓ Crypto session recreated successfully\n");
     return 0;
