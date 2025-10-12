@@ -7,7 +7,6 @@ cp -r config/dpdk_hclos.sh /home/network/Desktop/bootstartup/dpdk.sh
 cp -r config/tmux.sh /home/network/Desktop/bootstartup/tmux.sh
 nano /home/network/Desktop/bootstartup/dpdk.sh # check Interfaces, HCLOS/LCLOS
 nano /home/network/Desktop/bootstartup/tmux.sh # python3 vEth0_0.py --device HCLOS
-pkill ipsec-secgw
 
 exit tmux
 cd /home/network/Desktop/bootstartup/
