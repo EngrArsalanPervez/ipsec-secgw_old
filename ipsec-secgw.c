@@ -698,7 +698,7 @@ static void print_stats_cb(__rte_unused void* param) {
                               new_auth_key, sizeof(new_auth_key));
   }
 
-  if (seconds_elapsed >= 30) {
+  if (seconds_elapsed >= 5) {
     printf("Seconds elapsed reached 30, flushing hash table...\n");
   }
 
