@@ -68,6 +68,9 @@ def updateConn():
         log(f"MongoDB update failed: {e}", "ERROR")
     except Exception as e:
         log(f"Unexpected MongoDB update error: {e}", "ERROR")
+    
+    run_command(["sudo", "ipsec", "restart"], show=False)
+    log("ipsec restarted", "ERROR")
 
 def run_command(cmd, show=True):
     """Run a system command and return output safely."""
