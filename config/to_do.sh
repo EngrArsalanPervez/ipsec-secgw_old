@@ -11,3 +11,17 @@ pkill ipsec-secgw
 
 tmux kill-session -t eup
 ./tmux.sh
+
+
+
+
+
+
+# Delete all local changes
+git reset --hard && git clean -fd
+
+# Delete everything local. Sync with remote
+git fetch origin
+git reset --hard origin/$(git rev-parse --abbrev-ref HEAD)
+git clean -fd
+git clean -fdx
