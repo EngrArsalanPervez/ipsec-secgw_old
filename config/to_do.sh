@@ -1,7 +1,7 @@
 cd ipsec-secgw
 git pull
 make
-ln -s /home/network/GUI/NodeServer/conf_files/IPE.cfg ./IPE.cfg
+rm IPE.cfg; ln -s /home/network/GUI/NodeServer/conf_files/IPE.cfg ./IPE.cfg
 cp -r scripts /home/network/Desktop/bootstartup/
 cp -r config/dpdk_hclos.sh /home/network/Desktop/bootstartup/dpdk.sh
 cp -r config/tmux.sh /home/network/Desktop/bootstartup/tmux.sh
