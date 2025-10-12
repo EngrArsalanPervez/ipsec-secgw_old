@@ -1,3 +1,4 @@
+import argparse
 import subprocess
 import time
 import os
@@ -5,12 +6,7 @@ from datetime import datetime
 from pymongo import MongoClient
 
 
-ThisDevice = "HCLOS"  # or "LCLOS"
-
-if ThisDevice == "HCLOS":
-    MAC = "02:00:00:00:00:02"
-elif ThisDevice == "LCLOS":
-    MAC = "02:00:00:00:00:01"
+MAC = ""
 
 
 # --- MongoDB setup ---
@@ -169,6 +165,24 @@ def apply_network_settings():
 
 def main():
     log("INFO", "Starting continuous IPsec monitor...", CYAN)
+    parser = argparse.ArgumentParser(description="Continuous IPsec monitor")
+    parser.add_argument(
+        "--device",
+        choices=["HCLOS", "LCLOS"],
+        required=True,
+        help="Specify the device type (HCLOS or LCLOS)"
+    )
+    args = parser.parse_args()
+    ThisDevice = args.device
+
+    if ThisDevice == "HCLOS":
+        MAC = "02:00:00:00:00:02"
+    elif ThisDevice == "LCLOS":
+        MAC = "02:00:00:00:00:01"
+
+    print("Starting continuous IPsec monitor...")
+    print(f"Device Type: {ThisDevice}")
+    print(f"MAC Address: {MAC}")
 
     try:
         while True:

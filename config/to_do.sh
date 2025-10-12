@@ -17,3 +17,6 @@ sudo systemctl status strongswan
 
 systemctl disable strongswan
 systemctl disable strongswan-starter
+
+
+sudo ln -s /home/network/GUI/NodeServer/conf_files/IPE.cfg ./IPE.cfg
