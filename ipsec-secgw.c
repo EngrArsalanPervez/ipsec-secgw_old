@@ -386,122 +386,222 @@ void printTime(void) {
   printf("Time elapsed:%34s\n", appTime.time);
 }
 
-static void lookup_and_update_sa_keys(uint32_t target_spi,
-                                      const uint8_t* new_cipher_key,
-                                      uint32_t cipher_key_len,
-                                      const uint8_t* new_auth_key,
-                                      uint32_t auth_key_len) {
-  uint32_t i, j, k;
-  uint8_t socket_id;
-  struct sa_ctx* sa_ctx;
-  struct ipsec_sa* sa;
-  int found = 0;
+#include <rte_cryptodev.h>
 
-  printf("\n=== Searching for SPI 0x%x ===\n", target_spi);
-
-  /* Search through all socket contexts */
-  for (i = 0; i < NB_SOCKETS && i < rte_socket_count(); i++) {
-    socket_id = rte_socket_id_by_idx(i);
-
-    /* Check inbound SAs */
-    sa_ctx = socket_ctx[socket_id].sa_in;
-    if (sa_ctx != NULL) {
-      for (j = 0; j < sa_ctx->nb_sa; j++) {
-        sa = &sa_ctx->sa[j];
-        if (sa->spi == target_spi) {
-          found = 1;
-          printf("\n[INBOUND SA - Socket %d]\n", socket_id);
-          printf("Current Cipher Key (%u bytes): ", sa->cipher_key_len);
-          for (k = 0; k < sa->cipher_key_len; k++)
-            printf("%02x", sa->cipher_key[k]);
-          printf("\nCurrent Auth Key (%u bytes): ", sa->auth_key_len);
-          for (k = 0; k < sa->auth_key_len; k++)
-            printf("%02x", sa->auth_key[k]);
-
-          /* Update cipher key */
-          if (new_cipher_key != NULL && cipher_key_len > 0) {
-            if (cipher_key_len <= sizeof(sa->cipher_key)) {
-              memcpy(sa->cipher_key, new_cipher_key, cipher_key_len);
-              sa->cipher_key_len = cipher_key_len;
-              printf("\n✓ Updated Cipher Key (%u bytes): ", cipher_key_len);
-              for (k = 0; k < cipher_key_len; k++)
-                printf("%02x", new_cipher_key[k]);
-            } else {
-              printf("\n✗ Cipher key too long (%u > %lu)", cipher_key_len,
-                     sizeof(sa->cipher_key));
-            }
-          }
-
-          /* Update auth key */
-          if (new_auth_key != NULL && auth_key_len > 0) {
-            if (auth_key_len <= sizeof(sa->auth_key)) {
-              memcpy(sa->auth_key, new_auth_key, auth_key_len);
-              sa->auth_key_len = auth_key_len;
-              printf("\n✓ Updated Auth Key (%u bytes): ", auth_key_len);
-              for (k = 0; k < auth_key_len; k++)
-                printf("%02x", new_auth_key[k]);
-            } else {
-              printf("\n✗ Auth key too long (%u > %lu)", auth_key_len,
-                     sizeof(sa->auth_key));
-            }
-          }
-          printf("\n");
+/* Recreate crypto session with new keys */
+static int recreate_crypto_session(struct ipsec_sa *sa, uint8_t socket_id) {
+    struct rte_cryptodev_sym_session *old_sess = sa->crypto_session;
+    struct rte_cryptodev_sym_session *new_sess;
+    struct rte_crypto_sym_xform *cipher_xform, *auth_xform;
+    struct rte_crypto_sym_xform xform[2];
+    int ret;
+    
+    printf("Recreating crypto session for SPI 0x%x\n", sa->spi);
+    
+    /* Prepare transformation chain based on SA configuration */
+    memset(xform, 0, sizeof(xform));
+    
+    if (sa->aead_algo != RTE_CRYPTO_AEAD_ALGO_NOT_SPECIFIED) {
+        /* AEAD mode (e.g., AES-GCM) */
+        xform[0].type = RTE_CRYPTO_SYM_XFORM_AEAD;
+        xform[0].aead.algo = sa->aead_algo;
+        xform[0].aead.key.data = sa->cipher_key;
+        xform[0].aead.key.length = sa->cipher_key_len;
+        xform[0].aead.iv.offset = IV_OFFSET;
+        xform[0].aead.iv.length = sa->iv_len;
+        xform[0].aead.digest_length = sa->digest_len;
+        xform[0].aead.aad_length = sa->aad_len;
+        
+        if (sa->flags & IP4_TUNNEL || sa->flags & IP6_TUNNEL) {
+            xform[0].aead.op = (sa->direction == RTE_SECURITY_IPSEC_SA_DIR_EGRESS) ?
+                               RTE_CRYPTO_AEAD_OP_ENCRYPT : RTE_CRYPTO_AEAD_OP_DECRYPT;
         }
-      }
+        xform[0].next = NULL;
+        
+    } else {
+        /* Cipher + Auth mode (e.g., AES-CBC + HMAC-SHA256) */
+        
+        /* Setup based on direction */
+        if (sa->direction == RTE_SECURITY_IPSEC_SA_DIR_EGRESS) {
+            /* Outbound: Encrypt then Auth */
+            cipher_xform = &xform[0];
+            auth_xform = &xform[1];
+            cipher_xform->next = auth_xform;
+            auth_xform->next = NULL;
+            cipher_xform->cipher.op = RTE_CRYPTO_CIPHER_OP_ENCRYPT;
+            auth_xform->auth.op = RTE_CRYPTO_AUTH_OP_GENERATE;
+        } else {
+            /* Inbound: Auth then Decrypt */
+            auth_xform = &xform[0];
+            cipher_xform = &xform[1];
+            auth_xform->next = cipher_xform;
+            cipher_xform->next = NULL;
+            cipher_xform->cipher.op = RTE_CRYPTO_CIPHER_OP_DECRYPT;
+            auth_xform->auth.op = RTE_CRYPTO_AUTH_OP_VERIFY;
+        }
+        
+        /* Configure cipher */
+        cipher_xform->type = RTE_CRYPTO_SYM_XFORM_CIPHER;
+        cipher_xform->cipher.algo = sa->cipher_algo;
+        cipher_xform->cipher.key.data = sa->cipher_key;
+        cipher_xform->cipher.key.length = sa->cipher_key_len;
+        cipher_xform->cipher.iv.offset = IV_OFFSET;
+        cipher_xform->cipher.iv.length = sa->iv_len;
+        
+        /* Configure auth */
+        auth_xform->type = RTE_CRYPTO_SYM_XFORM_AUTH;
+        auth_xform->auth.algo = sa->auth_algo;
+        auth_xform->auth.key.data = sa->auth_key;
+        auth_xform->auth.key.length = sa->auth_key_len;
+        auth_xform->auth.digest_length = sa->digest_len;
+    }
+    
+    /* Create new session */
+    new_sess = rte_cryptodev_sym_session_create(
+        socket_ctx[socket_id].session_pool);
+    if (new_sess == NULL) {
+        printf("Failed to allocate session from pool\n");
+        return -1;
+    }
+    
+    /* Configure session with new keys */
+    ret = rte_cryptodev_sym_session_init(sa->portid, new_sess, 
+                                         &xform[0],
+                                         socket_ctx[socket_id].session_priv_pool);
+    if (ret < 0) {
+        printf("Failed to initialize crypto session: %d\n", ret);
+        rte_cryptodev_sym_session_free(new_sess);
+        return -1;
+    }
+    
+    /* Clear and free old session */
+    if (old_sess != NULL) {
+        rte_cryptodev_sym_session_clear(sa->portid, old_sess);
+        rte_cryptodev_sym_session_free(old_sess);
+    }
+    
+    /* Update SA with new session */
+    sa->crypto_session = new_sess;
+    
+    printf("✓ Crypto session recreated successfully\n");
+    return 0;
+}
+
+/* Updated lookup and update function */
+static int lookup_and_update_sa_keys(uint32_t target_spi,
+                                     const uint8_t* new_cipher_key,
+                                     uint32_t cipher_key_len,
+                                     const uint8_t* new_auth_key,
+                                     uint32_t auth_key_len) {
+    uint32_t i, j;
+    uint8_t socket_id;
+    struct sa_ctx* sa_ctx;
+    struct ipsec_sa* sa;
+    int found = 0;
+    int ret = 0;
+
+    printf("\n=== Searching for SPI 0x%x ===\n", target_spi);
+
+    /* Search through all socket contexts */
+    for (i = 0; i < NB_SOCKETS && i < rte_socket_count(); i++) {
+        socket_id = rte_socket_id_by_idx(i);
+
+        /* Check inbound SAs */
+        sa_ctx = socket_ctx[socket_id].sa_in;
+        if (sa_ctx != NULL) {
+            for (j = 0; j < sa_ctx->nb_sa; j++) {
+                sa = &sa_ctx->sa[j];
+                if (sa->spi == target_spi) {
+                    found = 1;
+                    printf("\n[INBOUND SA - Socket %d]\n", socket_id);
+                    
+                    /* Update cipher key */
+                    if (new_cipher_key != NULL && cipher_key_len > 0) {
+                        if (cipher_key_len <= sizeof(sa->cipher_key)) {
+                            memcpy(sa->cipher_key, new_cipher_key, cipher_key_len);
+                            sa->cipher_key_len = cipher_key_len;
+                            printf("✓ Updated Cipher Key (%u bytes)\n", cipher_key_len);
+                        } else {
+                            printf("✗ Cipher key too long\n");
+                            ret = -1;
+                            continue;
+                        }
+                    }
+
+                    /* Update auth key */
+                    if (new_auth_key != NULL && auth_key_len > 0) {
+                        if (auth_key_len <= sizeof(sa->auth_key)) {
+                            memcpy(sa->auth_key, new_auth_key, auth_key_len);
+                            sa->auth_key_len = auth_key_len;
+                            printf("✓ Updated Auth Key (%u bytes)\n", auth_key_len);
+                        } else {
+                            printf("✗ Auth key too long\n");
+                            ret = -1;
+                            continue;
+                        }
+                    }
+                    
+                    /* Recreate crypto session with new keys */
+                    if (recreate_crypto_session(sa, socket_id) < 0) {
+                        printf("✗ Failed to recreate crypto session\n");
+                        ret = -1;
+                    }
+                }
+            }
+        }
+
+        /* Check outbound SAs */
+        sa_ctx = socket_ctx[socket_id].sa_out;
+        if (sa_ctx != NULL) {
+            for (j = 0; j < sa_ctx->nb_sa; j++) {
+                sa = &sa_ctx->sa[j];
+                if (sa->spi == target_spi) {
+                    found = 1;
+                    printf("\n[OUTBOUND SA - Socket %d]\n", socket_id);
+                    
+                    /* Update cipher key */
+                    if (new_cipher_key != NULL && cipher_key_len > 0) {
+                        if (cipher_key_len <= sizeof(sa->cipher_key)) {
+                            memcpy(sa->cipher_key, new_cipher_key, cipher_key_len);
+                            sa->cipher_key_len = cipher_key_len;
+                            printf("✓ Updated Cipher Key (%u bytes)\n", cipher_key_len);
+                        } else {
+                            printf("✗ Cipher key too long\n");
+                            ret = -1;
+                            continue;
+                        }
+                    }
+
+                    /* Update auth key */
+                    if (new_auth_key != NULL && auth_key_len > 0) {
+                        if (auth_key_len <= sizeof(sa->auth_key)) {
+                            memcpy(sa->auth_key, new_auth_key, auth_key_len);
+                            sa->auth_key_len = auth_key_len;
+                            printf("✓ Updated Auth Key (%u bytes)\n", auth_key_len);
+                        } else {
+                            printf("✗ Auth key too long\n");
+                            ret = -1;
+                            continue;
+                        }
+                    }
+                    
+                    /* Recreate crypto session with new keys */
+                    if (recreate_crypto_session(sa, socket_id) < 0) {
+                        printf("✗ Failed to recreate crypto session\n");
+                        ret = -1;
+                    }
+                }
+            }
+        }
     }
 
-    /* Check outbound SAs */
-    sa_ctx = socket_ctx[socket_id].sa_out;
-    if (sa_ctx != NULL) {
-      for (j = 0; j < sa_ctx->nb_sa; j++) {
-        sa = &sa_ctx->sa[j];
-        if (sa->spi == target_spi) {
-          found = 1;
-          printf("\n[OUTBOUND SA - Socket %d]\n", socket_id);
-          printf("Current Cipher Key (%u bytes): ", sa->cipher_key_len);
-          for (k = 0; k < sa->cipher_key_len; k++)
-            printf("%02x", sa->cipher_key[k]);
-          printf("\nCurrent Auth Key (%u bytes): ", sa->auth_key_len);
-          for (k = 0; k < sa->auth_key_len; k++)
-            printf("%02x", sa->auth_key[k]);
-
-          /* Update cipher key */
-          if (new_cipher_key != NULL && cipher_key_len > 0) {
-            if (cipher_key_len <= sizeof(sa->cipher_key)) {
-              memcpy(sa->cipher_key, new_cipher_key, cipher_key_len);
-              sa->cipher_key_len = cipher_key_len;
-              printf("\n✓ Updated Cipher Key (%u bytes): ", cipher_key_len);
-              for (k = 0; k < cipher_key_len; k++)
-                printf("%02x", new_cipher_key[k]);
-            } else {
-              printf("\n✗ Cipher key too long (%u > %lu)", cipher_key_len,
-                     sizeof(sa->cipher_key));
-            }
-          }
-
-          /* Update auth key */
-          if (new_auth_key != NULL && auth_key_len > 0) {
-            if (auth_key_len <= sizeof(sa->auth_key)) {
-              memcpy(sa->auth_key, new_auth_key, auth_key_len);
-              sa->auth_key_len = auth_key_len;
-              printf("\n✓ Updated Auth Key (%u bytes): ", auth_key_len);
-              for (k = 0; k < auth_key_len; k++)
-                printf("%02x", new_auth_key[k]);
-            } else {
-              printf("\n✗ Auth key too long (%u > %lu)", auth_key_len,
-                     sizeof(sa->auth_key));
-            }
-          }
-          printf("\n");
-        }
-      }
+    if (!found) {
+        printf("SPI 0x%x NOT FOUND in any SA context\n", target_spi);
+        ret = -1;
     }
-  }
-
-  if (!found) {
-    printf("SPI 0x%x NOT FOUND in any SA context\n", target_spi);
-  }
-  printf("=====================================\n\n");
+    
+    printf("=====================================\n\n");
+    return ret;
 }
 
 /*
