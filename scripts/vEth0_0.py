@@ -116,6 +116,7 @@ def arp_exists(dst_ip):
 
 
 def apply_network_settings():
+    global MAC
     """Fetch IP/ARP entries from DB and apply."""
     try:
         fields_to_fetch = {"_id": 0, "dstIPSAOUT": 1, "srcIPSAOUT": 1}
@@ -165,6 +166,7 @@ def apply_network_settings():
 
 
 def main():
+    global MAC
     log("INFO", "Starting continuous IPsec monitor...", CYAN)
     parser = argparse.ArgumentParser(description="Continuous IPsec monitor")
     parser.add_argument(
