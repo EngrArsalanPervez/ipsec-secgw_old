@@ -49,7 +49,7 @@ if [ $? != 0 ]; then
   # Create the :9 window (tab)
   tmux new-window -t $SESSION_NAME:9 -n "vEth"
   tmux send-keys -t $SESSION_NAME:9 "cd /home/network/Desktop/bootstartup/scripts" Enter
-  tmux send-keys -t $SESSION_NAME:9 "python3 vEth0_0.py" Enter
+  tmux send-keys -t $SESSION_NAME:9 "python3 vEth0_0.py --device HCLOS" Enter
 
   # Create the :2 window (tab)
   tmux new-window -t $SESSION_NAME:9 -n "htop"
