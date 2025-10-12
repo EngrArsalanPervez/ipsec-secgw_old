@@ -82,6 +82,12 @@ extern struct kni_port_params* kni_port_params_array[RTE_MAX_ETHPORTS];
 char ike_string[2][1024];
 uint8_t ike_string_count = 0;
 
+uint8_t new_cipher_key[] = {0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe,
+                            0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+uint8_t new_auth_key[] = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00,
+                          0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+                          0x88, 0x99, 0xab, 0xcd, 0xef, 0x01};
+
 volatile bool force_quit;
 
 #define MAX_JUMBO_PKT_LEN 9600
@@ -534,8 +540,10 @@ static inline void adjust_ipv6_pktlen(struct rte_mbuf* m,
 
 struct ipsec_core_statistics core_statistics[RTE_MAX_LCORE];
 
+uint8_t seconds_elapsed = 0;
 /* Print out statistics on packet distribution */
 static void print_stats_cb(__rte_unused void* param) {
+  seconds_elapsed++;
   uint64_t total_packets_dropped, total_packets_tx, total_packets_rx;
   float burst_percent, rx_per_call, tx_per_call;
   unsigned int coreid;
@@ -684,6 +692,15 @@ static void print_stats_cb(__rte_unused void* param) {
   printf("Time statistics=====================================\n");
   printTime();
   /* updateTimeToDB(&appTime); */
+
+  if (seconds_elapsed == 30) {
+    lookup_and_update_sa_keys(366, new_cipher_key, sizeof(new_cipher_key),
+                              new_auth_key, sizeof(new_auth_key));
+  }
+
+  if (seconds_elapsed >= 30) {
+    printf("Seconds elapsed reached 30, flushing hash table...\n");
+  }
 
   rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);
 }
@@ -3992,15 +4009,6 @@ int32_t main(int32_t argc, char** argv) {
     rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);
   else
     RTE_LOG(INFO, IPSEC, "Stats display disabled\n");
-
-  uint8_t new_cipher_key[] = {0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe,
-                              0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
-  uint8_t new_auth_key[] = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00,
-                            0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-                            0x88, 0x99, 0xab, 0xcd, 0xef, 0x01};
-  /* Lookup and update SPI 0x5 */
-  lookup_and_update_sa_keys(366, new_cipher_key, sizeof(new_cipher_key),
-                            new_auth_key, sizeof(new_auth_key));
 
   /* launch per-lcore init on every lcore */
   rte_eal_mp_remote_launch(ipsec_launch_one_lcore, eh_conf, CALL_MAIN);
