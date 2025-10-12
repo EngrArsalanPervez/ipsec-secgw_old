@@ -693,7 +693,7 @@ static void print_stats_cb(__rte_unused void* param) {
   printTime();
   /* updateTimeToDB(&appTime); */
 
-  if (seconds_elapsed == 30) {
+  if (seconds_elapsed == 5) {
     lookup_and_update_sa_keys(366, new_cipher_key, sizeof(new_cipher_key),
                               new_auth_key, sizeof(new_auth_key));
   }
