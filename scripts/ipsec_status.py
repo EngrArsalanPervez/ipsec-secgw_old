@@ -140,7 +140,7 @@ def parse_ipsec_status_and_update_mongo():
             if collection is not None:
                 try:
                     result = collection.update_many(
-                        {"dstIPSAIN": src_ip}, {"$set": {"connectivity": "CONNECTING"}}
+                        {"dstIPSAOUT": src_ip}, {"$set": {"connectivity": "CONNECTING"}}
                     )
                     if result.modified_count > 0:
                         log(f"Updated {result.modified_count} document(s) for {src_ip}")
