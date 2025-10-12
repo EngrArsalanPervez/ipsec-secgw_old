@@ -1,6 +1,6 @@
 cd ipsec-secgw
 git pull
-make
+make clean; make
 rm IPE.cfg; ln -s /home/network/GUI/NodeServer/conf_files/IPE.cfg ./IPE.cfg
 cp -r scripts /home/network/Desktop/bootstartup/
 cp -r config/dpdk_hclos.sh /home/network/Desktop/bootstartup/dpdk.sh
@@ -9,6 +9,7 @@ nano /home/network/Desktop/bootstartup/dpdk.sh # check Interfaces, HCLOS/LCLOS
 nano /home/network/Desktop/bootstartup/tmux.sh # python3 vEth0_0.py --device HCLOS
 pkill ipsec-secgw
 
+exit tmux
 cd /home/network/Desktop/bootstartup/
 tmux kill-session -t eup
 ./tmux.sh
