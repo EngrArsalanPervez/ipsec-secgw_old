@@ -5,6 +5,14 @@ import time
 from datetime import datetime
 from pymongo import MongoClient, errors
 
+# --- ANSI colors ---
+GREEN = "\033[92m"
+RED = "\033[91m"
+YELLOW = "\033[93m"
+CYAN = "\033[96m"
+RESET = "\033[0m"
+BOLD = "\033[1m"
+
 
 try:
     client = MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=2000)
@@ -61,6 +69,23 @@ def updateConn():
     except Exception as e:
         log(f"Unexpected MongoDB update error: {e}", "ERROR")
 
+def run_command(cmd, show=True):
+    """Run a system command and return output safely."""
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        if show:
+            if result.returncode == 0:
+                if result.stdout.strip():
+                    log("INFO", f"Command output:\n{result.stdout.strip()}", CYAN)
+                else:
+                    log("INFO", "Command executed successfully (no output)", GREEN)
+            else:
+                log("ERROR", result.stderr.strip(), RED)
+        return result
+    except Exception as e:
+        log("ERROR", f"Command execution failed: {e}", RED)
+        return None
+
 
 def parse_ipsec_status_and_update_mongo():
     """Parse IPsec tunnel status and update MongoDB."""
@@ -105,6 +130,8 @@ def parse_ipsec_status_and_update_mongo():
                         log(f"Updated {result.modified_count} document(s) for {src_ip}")
                     else:
                         log(f"No documents found for {src_ip}")
+                        run_command(["sudo", "ipsec", "restart"], show=False)
+                        log("INFO", f"ipsec restarted", GREEN)
                 except errors.PyMongoError as e:
                     log(f"MongoDB update error: {e}", "ERROR")
 
@@ -119,6 +146,8 @@ def parse_ipsec_status_and_update_mongo():
                         log(f"Updated {result.modified_count} document(s) for {src_ip}")
                     else:
                         log(f"No documents found for {src_ip}")
+                        run_command(["sudo", "ipsec", "restart"], show=False)
+                        log("INFO", f"ipsec restarted", GREEN)
                 except errors.PyMongoError as e:
                     log(f"MongoDB update error: {e}", "ERROR")
 
