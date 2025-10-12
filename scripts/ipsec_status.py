@@ -131,7 +131,7 @@ def parse_ipsec_status_and_update_mongo():
                     else:
                         log(f"No documents found for {src_ip}")
                         run_command(["sudo", "ipsec", "restart"], show=False)
-                        log("INFO", f"ipsec restarted", GREEN)
+                        log("ipsec restarted", "ERROR")
                 except errors.PyMongoError as e:
                     log(f"MongoDB update error: {e}", "ERROR")
 
@@ -147,7 +147,7 @@ def parse_ipsec_status_and_update_mongo():
                     else:
                         log(f"No documents found for {src_ip}")
                         run_command(["sudo", "ipsec", "restart"], show=False)
-                        log("INFO", f"ipsec restarted", GREEN)
+                        log("ipsec restarted", "ERROR")
                 except errors.PyMongoError as e:
                     log(f"MongoDB update error: {e}", "ERROR")
 
