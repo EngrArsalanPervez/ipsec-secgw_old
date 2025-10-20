@@ -1,6 +1,6 @@
 #include "stats.h"
 
-struct appStatsStruct appStatsData[2] = {0};
+struct appStatsStruct appStatsData[4] = {0};
 
 void printAppStats(void) {
   // Layer2
