@@ -16,16 +16,16 @@
 #include "ngtl/kni/kni.h"
 
 struct port_drv_mode_data {
-  struct rte_security_session *sess;
-  struct rte_security_ctx *ctx;
+  struct rte_security_session* sess;
+  struct rte_security_ctx* ctx;
 };
 
-static inline enum pkt_type process_ipsec_get_pkt_type(struct rte_mbuf *pkt,
-                                                       uint8_t **nlp) {
-  struct rte_ether_hdr *eth;
+static inline enum pkt_type process_ipsec_get_pkt_type(struct rte_mbuf* pkt,
+                                                       uint8_t** nlp) {
+  struct rte_ether_hdr* eth;
   uint32_t ptype = pkt->packet_type;
 
-  eth = rte_pktmbuf_mtod(pkt, struct rte_ether_hdr *);
+  eth = rte_pktmbuf_mtod(pkt, struct rte_ether_hdr*);
   rte_prefetch0(eth);
 
   if (RTE_ETH_IS_IPV4_HDR(ptype)) {
@@ -47,15 +47,15 @@ static inline enum pkt_type process_ipsec_get_pkt_type(struct rte_mbuf *pkt,
   return PKT_TYPE_INVALID;
 }
 
-static inline void update_mac_addrs(struct rte_mbuf *pkt, uint16_t portid) {
-  struct rte_ether_hdr *ethhdr;
+static inline void update_mac_addrs(struct rte_mbuf* pkt, uint16_t portid) {
+  struct rte_ether_hdr* ethhdr;
 
-  ethhdr = rte_pktmbuf_mtod(pkt, struct rte_ether_hdr *);
+  ethhdr = rte_pktmbuf_mtod(pkt, struct rte_ether_hdr*);
   memcpy(&ethhdr->src_addr, &ethaddr_tbl[portid].src, RTE_ETHER_ADDR_LEN);
   memcpy(&ethhdr->dst_addr, &ethaddr_tbl[portid].dst, RTE_ETHER_ADDR_LEN);
 }
 
-static inline void ipsec_event_pre_forward(struct rte_mbuf *m,
+static inline void ipsec_event_pre_forward(struct rte_mbuf* m,
                                            unsigned int port_id) {
   /* Save the destination port in the mbuf */
   m->port = port_id;
@@ -64,14 +64,14 @@ static inline void ipsec_event_pre_forward(struct rte_mbuf *m,
   rte_event_eth_tx_adapter_txq_set(m, 0);
 }
 
-static inline void ev_vector_attr_init(struct rte_event_vector *vec) {
+static inline void ev_vector_attr_init(struct rte_event_vector* vec) {
   vec->attr_valid = 1;
   vec->port = 0xFFFF;
   vec->queue = 0;
 }
 
-static inline void ev_vector_attr_update(struct rte_event_vector *vec,
-                                         struct rte_mbuf *pkt) {
+static inline void ev_vector_attr_update(struct rte_event_vector* vec,
+                                         struct rte_mbuf* pkt) {
   if (vec->port == 0xFFFF) {
     vec->port = pkt->port;
     return;
@@ -80,18 +80,17 @@ static inline void ev_vector_attr_update(struct rte_event_vector *vec,
     vec->attr_valid = 0;
 }
 
-static inline void prepare_out_sessions_tbl(struct sa_ctx *sa_out,
-                                            struct port_drv_mode_data *data,
+static inline void prepare_out_sessions_tbl(struct sa_ctx* sa_out,
+                                            struct port_drv_mode_data* data,
                                             uint16_t size) {
-  struct rte_ipsec_session *pri_sess;
-  struct ipsec_sa *sa;
+  struct rte_ipsec_session* pri_sess;
+  struct ipsec_sa* sa;
   uint32_t i;
 
   if (!sa_out)
     return;
 
   for (i = 0; i < sa_out->nb_sa; i++) {
-
     sa = &sa_out->sa[i];
     if (!sa)
       continue;
@@ -101,7 +100,6 @@ static inline void prepare_out_sessions_tbl(struct sa_ctx *sa_out,
       continue;
 
     if (pri_sess->type != RTE_SECURITY_ACTION_TYPE_INLINE_PROTOCOL) {
-
       RTE_LOG(ERR, IPSEC, "Invalid session type %d\n", pri_sess->type);
       continue;
     }
@@ -120,14 +118,15 @@ static inline void prepare_out_sessions_tbl(struct sa_ctx *sa_out,
   }
 }
 
-static inline int check_sp(struct sp_ctx *sp, const uint8_t *nlp,
-                           uint32_t *sa_idx) {
+static inline int check_sp(struct sp_ctx* sp,
+                           const uint8_t* nlp,
+                           uint32_t* sa_idx) {
   uint32_t res;
 
   if (unlikely(sp == NULL))
     return 0;
 
-  rte_acl_classify((struct rte_acl_ctx *)sp, &nlp, &res, 1,
+  rte_acl_classify((struct rte_acl_ctx*)sp, &nlp, &res, 1,
                    DEFAULT_MAX_CATEGORIES);
 
   if (unlikely(res == DISCARD))
@@ -141,15 +140,16 @@ static inline int check_sp(struct sp_ctx *sp, const uint8_t *nlp,
   return 1;
 }
 
-static inline void check_sp_bulk(struct sp_ctx *sp, struct traffic_type *ip,
-                                 struct traffic_type *ipsec) {
+static inline void check_sp_bulk(struct sp_ctx* sp,
+                                 struct traffic_type* ip,
+                                 struct traffic_type* ipsec) {
   uint32_t i, j, res;
-  struct rte_mbuf *m;
+  struct rte_mbuf* m;
 
   if (unlikely(sp == NULL || ip->num == 0))
     return;
 
-  rte_acl_classify((struct rte_acl_ctx *)sp, ip->data, ip->res, ip->num,
+  rte_acl_classify((struct rte_acl_ctx*)sp, ip->data, ip->res, ip->num,
                    DEFAULT_MAX_CATEGORIES);
 
   j = 0;
@@ -168,16 +168,17 @@ static inline void check_sp_bulk(struct sp_ctx *sp, struct traffic_type *ip,
   ip->num = j;
 }
 
-static inline void check_sp_sa_bulk(struct sp_ctx *sp, struct sa_ctx *sa_ctx,
-                                    struct traffic_type *ip) {
-  struct ipsec_sa *sa;
+static inline void check_sp_sa_bulk(struct sp_ctx* sp,
+                                    struct sa_ctx* sa_ctx,
+                                    struct traffic_type* ip) {
+  struct ipsec_sa* sa;
   uint32_t i, j, res;
-  struct rte_mbuf *m;
+  struct rte_mbuf* m;
 
   if (unlikely(sp == NULL || ip->num == 0))
     return;
 
-  rte_acl_classify((struct rte_acl_ctx *)sp, ip->data, ip->res, ip->num,
+  rte_acl_classify((struct rte_acl_ctx*)sp, ip->data, ip->res, ip->num,
                    DEFAULT_MAX_CATEGORIES);
 
   j = 0;
@@ -189,7 +190,7 @@ static inline void check_sp_sa_bulk(struct sp_ctx *sp, struct sa_ctx *sa_ctx,
     else if (res == BYPASS)
       ip->pkts[j++] = m;
     else {
-      sa = *(struct ipsec_sa **)rte_security_dynfield(m);
+      sa = *(struct ipsec_sa**)rte_security_dynfield(m);
       if (sa == NULL) {
         free_pkts(&m, 1);
         continue;
@@ -207,17 +208,17 @@ static inline void check_sp_sa_bulk(struct sp_ctx *sp, struct sa_ctx *sa_ctx,
   ip->num = j;
 }
 
-static inline uint16_t route4_pkt(struct rte_mbuf *pkt, struct rt_ctx *rt_ctx) {
+static inline uint16_t route4_pkt(struct rte_mbuf* pkt, struct rt_ctx* rt_ctx) {
   uint32_t dst_ip;
   uint16_t offset;
   uint32_t hop;
   int ret;
 
   offset = RTE_ETHER_HDR_LEN + offsetof(struct ip, ip_dst);
-  dst_ip = *rte_pktmbuf_mtod_offset(pkt, uint32_t *, offset);
+  dst_ip = *rte_pktmbuf_mtod_offset(pkt, uint32_t*, offset);
   dst_ip = rte_be_to_cpu_32(dst_ip);
 
-  ret = rte_lpm_lookup((struct rte_lpm *)rt_ctx, dst_ip, &hop);
+  ret = rte_lpm_lookup((struct rte_lpm*)rt_ctx, dst_ip, &hop);
 
   if (ret == 0) {
     /* We have a hit */
@@ -229,18 +230,18 @@ static inline uint16_t route4_pkt(struct rte_mbuf *pkt, struct rt_ctx *rt_ctx) {
 }
 
 /* TODO: To be tested */
-static inline uint16_t route6_pkt(struct rte_mbuf *pkt, struct rt_ctx *rt_ctx) {
+static inline uint16_t route6_pkt(struct rte_mbuf* pkt, struct rt_ctx* rt_ctx) {
   uint8_t dst_ip[16];
-  uint8_t *ip6_dst;
+  uint8_t* ip6_dst;
   uint16_t offset;
   uint32_t hop;
   int ret;
 
   offset = RTE_ETHER_HDR_LEN + offsetof(struct ip6_hdr, ip6_dst);
-  ip6_dst = rte_pktmbuf_mtod_offset(pkt, uint8_t *, offset);
+  ip6_dst = rte_pktmbuf_mtod_offset(pkt, uint8_t*, offset);
   memcpy(&dst_ip[0], ip6_dst, 16);
 
-  ret = rte_lpm6_lookup((struct rte_lpm6 *)rt_ctx, dst_ip, &hop);
+  ret = rte_lpm6_lookup((struct rte_lpm6*)rt_ctx, dst_ip, &hop);
 
   if (ret == 0) {
     /* We have a hit */
@@ -251,7 +252,8 @@ static inline uint16_t route6_pkt(struct rte_mbuf *pkt, struct rt_ctx *rt_ctx) {
   return RTE_MAX_ETHPORTS;
 }
 
-uint16_t get_route(struct rte_mbuf *pkt, struct route_table *rt,
+uint16_t get_route(struct rte_mbuf* pkt,
+                   struct route_table* rt,
                    enum pkt_type type) {
   if (type == PKT_TYPE_PLAIN_IPV4 || type == PKT_TYPE_IPSEC_IPV4)
     return route4_pkt(pkt, rt->rt4_ctx);
@@ -261,15 +263,15 @@ uint16_t get_route(struct rte_mbuf *pkt, struct route_table *rt,
   return RTE_MAX_ETHPORTS;
 }
 
-static inline int process_ipsec_ev_inbound(struct ipsec_ctx *ctx,
-                                           struct route_table *rt,
-                                           struct rte_event *ev) {
-  struct ipsec_sa *sa = NULL;
-  struct rte_mbuf *pkt;
+static inline int process_ipsec_ev_inbound(struct ipsec_ctx* ctx,
+                                           struct route_table* rt,
+                                           struct rte_event* ev) {
+  struct ipsec_sa* sa = NULL;
+  struct rte_mbuf* pkt;
   uint16_t port_id = 0;
   enum pkt_type type;
   uint32_t sa_idx;
-  uint8_t *nlp;
+  uint8_t* nlp;
 
   /* Get pkt from event */
   pkt = ev->mbuf;
@@ -278,41 +280,41 @@ static inline int process_ipsec_ev_inbound(struct ipsec_ctx *ctx,
   type = process_ipsec_get_pkt_type(pkt, &nlp);
 
   switch (type) {
-  case PKT_TYPE_PLAIN_IPV4:
-    if (pkt->ol_flags & RTE_MBUF_F_RX_SEC_OFFLOAD) {
-      if (unlikely(pkt->ol_flags & RTE_MBUF_F_RX_SEC_OFFLOAD_FAILED)) {
-        RTE_LOG(ERR, IPSEC, "Inbound security offload failed\n");
+    case PKT_TYPE_PLAIN_IPV4:
+      if (pkt->ol_flags & RTE_MBUF_F_RX_SEC_OFFLOAD) {
+        if (unlikely(pkt->ol_flags & RTE_MBUF_F_RX_SEC_OFFLOAD_FAILED)) {
+          RTE_LOG(ERR, IPSEC, "Inbound security offload failed\n");
+          goto drop_pkt_and_exit;
+        }
+        sa = *(struct ipsec_sa**)rte_security_dynfield(pkt);
+      }
+
+      /* Check if we have a match */
+      if (check_sp(ctx->sp4_ctx, nlp, &sa_idx) == 0) {
+        /* No valid match */
         goto drop_pkt_and_exit;
       }
-      sa = *(struct ipsec_sa **)rte_security_dynfield(pkt);
-    }
+      break;
 
-    /* Check if we have a match */
-    if (check_sp(ctx->sp4_ctx, nlp, &sa_idx) == 0) {
-      /* No valid match */
-      goto drop_pkt_and_exit;
-    }
-    break;
+    case PKT_TYPE_PLAIN_IPV6:
+      if (pkt->ol_flags & RTE_MBUF_F_RX_SEC_OFFLOAD) {
+        if (unlikely(pkt->ol_flags & RTE_MBUF_F_RX_SEC_OFFLOAD_FAILED)) {
+          RTE_LOG(ERR, IPSEC, "Inbound security offload failed\n");
+          goto drop_pkt_and_exit;
+        }
+        sa = *(struct ipsec_sa**)rte_security_dynfield(pkt);
+      }
 
-  case PKT_TYPE_PLAIN_IPV6:
-    if (pkt->ol_flags & RTE_MBUF_F_RX_SEC_OFFLOAD) {
-      if (unlikely(pkt->ol_flags & RTE_MBUF_F_RX_SEC_OFFLOAD_FAILED)) {
-        RTE_LOG(ERR, IPSEC, "Inbound security offload failed\n");
+      /* Check if we have a match */
+      if (check_sp(ctx->sp6_ctx, nlp, &sa_idx) == 0) {
+        /* No valid match */
         goto drop_pkt_and_exit;
       }
-      sa = *(struct ipsec_sa **)rte_security_dynfield(pkt);
-    }
+      break;
 
-    /* Check if we have a match */
-    if (check_sp(ctx->sp6_ctx, nlp, &sa_idx) == 0) {
-      /* No valid match */
+    default:
+      RTE_LOG(ERR, IPSEC, "Unsupported packet type = %d\n", type);
       goto drop_pkt_and_exit;
-    }
-    break;
-
-  default:
-    RTE_LOG(ERR, IPSEC, "Unsupported packet type = %d\n", type);
-    goto drop_pkt_and_exit;
   }
 
   /* Check if the packet has to be bypassed */
@@ -355,17 +357,17 @@ drop_pkt_and_exit:
   return PKT_DROPPED;
 }
 
-static inline int process_ipsec_ev_outbound(struct ipsec_ctx *ctx,
-                                            struct route_table *rt,
-                                            struct rte_event *ev) {
-  struct rte_ipsec_session *sess;
-  struct sa_ctx *sa_ctx;
-  struct rte_mbuf *pkt;
+static inline int process_ipsec_ev_outbound(struct ipsec_ctx* ctx,
+                                            struct route_table* rt,
+                                            struct rte_event* ev) {
+  struct rte_ipsec_session* sess;
+  struct sa_ctx* sa_ctx;
+  struct rte_mbuf* pkt;
   uint16_t port_id = 0;
-  struct ipsec_sa *sa;
+  struct ipsec_sa* sa;
   enum pkt_type type;
   uint32_t sa_idx;
-  uint8_t *nlp;
+  uint8_t* nlp;
 
   /* Get pkt from event */
   pkt = ev->mbuf;
@@ -374,27 +376,27 @@ static inline int process_ipsec_ev_outbound(struct ipsec_ctx *ctx,
   type = process_ipsec_get_pkt_type(pkt, &nlp);
 
   switch (type) {
-  case PKT_TYPE_PLAIN_IPV4:
-    /* Check if we have a match */
-    if (check_sp(ctx->sp4_ctx, nlp, &sa_idx) == 0) {
-      /* No valid match */
+    case PKT_TYPE_PLAIN_IPV4:
+      /* Check if we have a match */
+      if (check_sp(ctx->sp4_ctx, nlp, &sa_idx) == 0) {
+        /* No valid match */
+        goto drop_pkt_and_exit;
+      }
+      break;
+    case PKT_TYPE_PLAIN_IPV6:
+      /* Check if we have a match */
+      if (check_sp(ctx->sp6_ctx, nlp, &sa_idx) == 0) {
+        /* No valid match */
+        goto drop_pkt_and_exit;
+      }
+      break;
+    default:
+      /*
+       * Only plain IPv4 & IPv6 packets are allowed
+       * on protected port. Drop the rest.
+       */
+      RTE_LOG(ERR, IPSEC, "Unsupported packet type = %d\n", type);
       goto drop_pkt_and_exit;
-    }
-    break;
-  case PKT_TYPE_PLAIN_IPV6:
-    /* Check if we have a match */
-    if (check_sp(ctx->sp6_ctx, nlp, &sa_idx) == 0) {
-      /* No valid match */
-      goto drop_pkt_and_exit;
-    }
-    break;
-  default:
-    /*
-     * Only plain IPv4 & IPv6 packets are allowed
-     * on protected port. Drop the rest.
-     */
-    RTE_LOG(ERR, IPSEC, "Unsupported packet type = %d\n", type);
-    goto drop_pkt_and_exit;
   }
 
   /* Check if the packet has to be bypassed */
@@ -456,15 +458,15 @@ drop_pkt_and_exit:
   return PKT_DROPPED;
 }
 
-static inline int ipsec_ev_route_pkts(struct rte_event_vector *vec,
-                                      struct route_table *rt,
-                                      struct ipsec_traffic *t,
-                                      struct sa_ctx *sa_ctx) {
-  struct rte_ipsec_session *sess;
+static inline int ipsec_ev_route_pkts(struct rte_event_vector* vec,
+                                      struct route_table* rt,
+                                      struct ipsec_traffic* t,
+                                      struct sa_ctx* sa_ctx) {
+  struct rte_ipsec_session* sess;
   uint32_t sa_idx, i, j = 0;
   uint16_t port_id = 0;
-  struct rte_mbuf *pkt;
-  struct ipsec_sa *sa;
+  struct rte_mbuf* pkt;
+  struct ipsec_sa* sa;
 
   /* Route IPv4 packets */
   for (i = 0; i < t->ip4.num; i++) {
@@ -529,34 +531,35 @@ static inline int ipsec_ev_route_pkts(struct rte_event_vector *vec,
   return j;
 }
 
-static inline void classify_pkt(struct rte_mbuf *pkt, struct ipsec_traffic *t) {
+static inline void classify_pkt(struct rte_mbuf* pkt, struct ipsec_traffic* t) {
   enum pkt_type type;
-  uint8_t *nlp;
+  uint8_t* nlp;
 
   /* Check the packet type */
   type = process_ipsec_get_pkt_type(pkt, &nlp);
 
   switch (type) {
-  case PKT_TYPE_PLAIN_IPV4:
-    t->ip4.data[t->ip4.num] = nlp;
-    t->ip4.pkts[(t->ip4.num)++] = pkt;
-    break;
-  case PKT_TYPE_PLAIN_IPV6:
-    t->ip6.data[t->ip6.num] = nlp;
-    t->ip6.pkts[(t->ip6.num)++] = pkt;
-    break;
-  default:
-    RTE_LOG(ERR, IPSEC, "Unsupported packet type = %d\n", type);
-    free_pkts(&pkt, 1);
-    break;
+    case PKT_TYPE_PLAIN_IPV4:
+      t->ip4.data[t->ip4.num] = nlp;
+      t->ip4.pkts[(t->ip4.num)++] = pkt;
+      break;
+    case PKT_TYPE_PLAIN_IPV6:
+      t->ip6.data[t->ip6.num] = nlp;
+      t->ip6.pkts[(t->ip6.num)++] = pkt;
+      break;
+    default:
+      RTE_LOG(ERR, IPSEC, "Unsupported packet type = %d\n", type);
+      free_pkts(&pkt, 1);
+      break;
   }
 }
 
-static inline int
-process_ipsec_ev_inbound_vector(struct ipsec_ctx *ctx, struct route_table *rt,
-                                struct rte_event_vector *vec) {
+static inline int process_ipsec_ev_inbound_vector(
+    struct ipsec_ctx* ctx,
+    struct route_table* rt,
+    struct rte_event_vector* vec) {
   struct ipsec_traffic t;
-  struct rte_mbuf *pkt;
+  struct rte_mbuf* pkt;
   int i;
 
   t.ip4.num = 0;
@@ -584,11 +587,12 @@ process_ipsec_ev_inbound_vector(struct ipsec_ctx *ctx, struct route_table *rt,
   return ipsec_ev_route_pkts(vec, rt, &t, ctx->sa_ctx);
 }
 
-static inline int
-process_ipsec_ev_outbound_vector(struct ipsec_ctx *ctx, struct route_table *rt,
-                                 struct rte_event_vector *vec) {
+static inline int process_ipsec_ev_outbound_vector(
+    struct ipsec_ctx* ctx,
+    struct route_table* rt,
+    struct rte_event_vector* vec) {
   struct ipsec_traffic t;
-  struct rte_mbuf *pkt;
+  struct rte_mbuf* pkt;
   uint32_t i;
 
   t.ip4.num = 0;
@@ -611,10 +615,10 @@ process_ipsec_ev_outbound_vector(struct ipsec_ctx *ctx, struct route_table *rt,
   return ipsec_ev_route_pkts(vec, rt, &t, ctx->sa_ctx);
 }
 
-static inline int
-process_ipsec_ev_drv_mode_outbound_vector(struct rte_event_vector *vec,
-                                          struct port_drv_mode_data *data) {
-  struct rte_mbuf *pkt;
+static inline int process_ipsec_ev_drv_mode_outbound_vector(
+    struct rte_event_vector* vec,
+    struct port_drv_mode_data* data) {
+  struct rte_mbuf* pkt;
   int16_t port_id;
   uint32_t i;
   int j = 0;
@@ -644,12 +648,12 @@ process_ipsec_ev_drv_mode_outbound_vector(struct rte_event_vector *vec,
   return j;
 }
 
-static inline void
-ipsec_ev_vector_process(struct lcore_conf_ev_tx_int_port_wrkr *lconf,
-                        struct eh_event_link_info *links,
-                        struct rte_event *ev) {
-  struct rte_event_vector *vec = ev->vec;
-  struct rte_mbuf *pkt;
+static inline void ipsec_ev_vector_process(
+    struct lcore_conf_ev_tx_int_port_wrkr* lconf,
+    struct eh_event_link_info* links,
+    struct rte_event* ev) {
+  struct rte_event_vector* vec = ev->vec;
+  struct rte_mbuf* pkt;
   int ret;
 
   pkt = vec->mbufs[0];
@@ -669,12 +673,12 @@ ipsec_ev_vector_process(struct lcore_conf_ev_tx_int_port_wrkr *lconf,
   }
 }
 
-static inline void
-ipsec_ev_vector_drv_mode_process(struct eh_event_link_info *links,
-                                 struct rte_event *ev,
-                                 struct port_drv_mode_data *data) {
-  struct rte_event_vector *vec = ev->vec;
-  struct rte_mbuf *pkt;
+static inline void ipsec_ev_vector_drv_mode_process(
+    struct eh_event_link_info* links,
+    struct rte_event* ev,
+    struct port_drv_mode_data* data) {
+  struct rte_event_vector* vec = ev->vec;
+  struct rte_mbuf* pkt;
 
   pkt = vec->mbufs[0];
 
@@ -700,12 +704,12 @@ ipsec_ev_vector_drv_mode_process(struct eh_event_link_info *links,
  * Event mode worker
  * Operating parameters : non-burst - Tx internal port - driver mode
  */
-static void
-ipsec_wrkr_non_burst_int_port_drv_mode(struct eh_event_link_info *links,
-                                       uint8_t nb_links) {
+static void ipsec_wrkr_non_burst_int_port_drv_mode(
+    struct eh_event_link_info* links,
+    uint8_t nb_links) {
   struct port_drv_mode_data data[RTE_MAX_ETHPORTS];
   unsigned int nb_rx = 0;
-  struct rte_mbuf *pkt;
+  struct rte_mbuf* pkt;
   struct rte_event ev;
   uint32_t lcore_id;
   int32_t socket_id;
@@ -757,27 +761,26 @@ ipsec_wrkr_non_burst_int_port_drv_mode(struct eh_event_link_info *links,
       continue;
 
     switch (ev.event_type) {
-    case RTE_EVENT_TYPE_ETH_RX_ADAPTER_VECTOR:
-    case RTE_EVENT_TYPE_ETHDEV_VECTOR:
-      ipsec_ev_vector_drv_mode_process(links, &ev, data);
-      continue;
-    case RTE_EVENT_TYPE_ETHDEV:
-      break;
-    default:
-      RTE_LOG(ERR, IPSEC, "Invalid event type %u", ev.event_type);
-      continue;
+      case RTE_EVENT_TYPE_ETH_RX_ADAPTER_VECTOR:
+      case RTE_EVENT_TYPE_ETHDEV_VECTOR:
+        ipsec_ev_vector_drv_mode_process(links, &ev, data);
+        continue;
+      case RTE_EVENT_TYPE_ETHDEV:
+        break;
+      default:
+        RTE_LOG(ERR, IPSEC, "Invalid event type %u", ev.event_type);
+        continue;
     }
 
     pkt = ev.mbuf;
     port_id = pkt->port;
 
-    rte_prefetch0(rte_pktmbuf_mtod(pkt, void *));
+    rte_prefetch0(rte_pktmbuf_mtod(pkt, void*));
 
     /* Process packet */
     ipsec_event_pre_forward(pkt, port_id);
 
     if (!is_unprotected_port(port_id)) {
-
       if (unlikely(!data[port_id].sess)) {
         rte_pktmbuf_free(pkt);
         continue;
@@ -810,9 +813,9 @@ ipsec_wrkr_non_burst_int_port_drv_mode(struct eh_event_link_info *links,
  * Event mode worker
  * Operating parameters : non-burst - Tx internal port - app mode
  */
-static void
-ipsec_wrkr_non_burst_int_port_app_mode(struct eh_event_link_info *links,
-                                       uint8_t nb_links) {
+static void ipsec_wrkr_non_burst_int_port_app_mode(
+    struct eh_event_link_info* links,
+    uint8_t nb_links) {
   struct lcore_conf_ev_tx_int_port_wrkr lconf;
   unsigned int nb_rx = 0;
   struct rte_event ev;
@@ -872,15 +875,15 @@ ipsec_wrkr_non_burst_int_port_app_mode(struct eh_event_link_info *links,
       continue;
 
     switch (ev.event_type) {
-    case RTE_EVENT_TYPE_ETH_RX_ADAPTER_VECTOR:
-    case RTE_EVENT_TYPE_ETHDEV_VECTOR:
-      ipsec_ev_vector_process(&lconf, links, &ev);
-      continue;
-    case RTE_EVENT_TYPE_ETHDEV:
-      break;
-    default:
-      RTE_LOG(ERR, IPSEC, "Invalid event type %u", ev.event_type);
-      continue;
+      case RTE_EVENT_TYPE_ETH_RX_ADAPTER_VECTOR:
+      case RTE_EVENT_TYPE_ETHDEV_VECTOR:
+        ipsec_ev_vector_process(&lconf, links, &ev);
+        continue;
+      case RTE_EVENT_TYPE_ETHDEV:
+        break;
+      default:
+        RTE_LOG(ERR, IPSEC, "Invalid event type %u", ev.event_type);
+        continue;
     }
 
     if (is_unprotected_port(ev.mbuf->port))
@@ -903,9 +906,9 @@ ipsec_wrkr_non_burst_int_port_app_mode(struct eh_event_link_info *links,
   }
 }
 
-static uint8_t
-ipsec_eventmode_populate_wrkr_params(struct eh_app_worker_params *wrkrs) {
-  struct eh_app_worker_params *wrkr;
+static uint8_t ipsec_eventmode_populate_wrkr_params(
+    struct eh_app_worker_params* wrkrs) {
+  struct eh_app_worker_params* wrkr;
   uint8_t nb_wrkr_param = 0;
 
   /* Save workers */
@@ -929,7 +932,7 @@ ipsec_eventmode_populate_wrkr_params(struct eh_app_worker_params *wrkrs) {
   return nb_wrkr_param;
 }
 
-static void ipsec_eventmode_worker(struct eh_conf *conf) {
+static void ipsec_eventmode_worker(struct eh_conf* conf) {
   struct eh_app_worker_params ipsec_wrkr[IPSEC_EVENTMODE_WORKERS] = {
       {{{0}}, NULL}};
   uint8_t nb_wrkr_param;
@@ -944,7 +947,7 @@ static void ipsec_eventmode_worker(struct eh_conf *conf) {
   eh_launch_worker(conf, ipsec_wrkr, nb_wrkr_param);
 }
 
-int ipsec_launch_one_lcore(void *args) {
+int ipsec_launch_one_lcore(void* args) {
   uint32_t lcore_id = rte_lcore_id();
 
   if (lcore_id == ipEncryptorType.kni_rx_core) {
@@ -964,9 +967,13 @@ int ipsec_launch_one_lcore(void *args) {
     return 0;
   }
 
-  struct eh_conf *conf;
+  while (kni_configured == 0) {
+    sleep(1);
+  }
 
-  conf = (struct eh_conf *)args;
+  struct eh_conf* conf;
+
+  conf = (struct eh_conf*)args;
 
   if (conf->mode == EH_PKT_TRANSFER_MODE_POLL) {
     /* Run in poll mode */

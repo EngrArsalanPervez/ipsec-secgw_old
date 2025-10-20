@@ -15,6 +15,7 @@ struct ipEncryptorTypeStruct {
   uint8_t vEth0_0_MAC[RTE_ETHER_ADDR_LEN];
 };
 extern struct ipEncryptorTypeStruct ipEncryptorType;
+extern uint8_t kni_configured;
 
 /* Max kernels threads per port */
 #define KNI_MAX_KTHREAD 32
@@ -29,7 +30,7 @@ struct kni_port_params {
   uint32_t nb_lcore_k; /* Number of lcores for KNI multi kernel threads */
   uint32_t nb_kni;     /* Number of KNI devices to be created */
   unsigned lcore_k[KNI_MAX_KTHREAD];    /* lcore ID list for kthreads */
-  struct rte_kni *kni[KNI_MAX_KTHREAD]; /* KNI context pointers */
+  struct rte_kni* kni[KNI_MAX_KTHREAD]; /* KNI context pointers */
 } __rte_cache_aligned;
 
 /* Structure type for recording kni interface specific stats */
@@ -47,7 +48,7 @@ struct kni_interface_stats {
   uint64_t tx_dropped;
 };
 
-int kni_main(struct rte_mempool *shared_pool);
+int kni_main(struct rte_mempool* shared_pool);
 void signal_handler_kni(void);
 void print_kni_stats(void);
 
