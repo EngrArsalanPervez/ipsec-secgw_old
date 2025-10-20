@@ -40,9 +40,9 @@ static: build/$(APP)-static
 	ln -sf $(APP)-static build/$(APP)
 
 PC_FILE := $(shell $(PKGCONF) --path libdpdk 2>/dev/null)
-CFLAGS += -O3 $(shell $(PKGCONF) --cflags libdpdk libcurl libmongoc2)
-LDFLAGS_SHARED = $(shell $(PKGCONF) --libs libdpdk libcurl libmongoc2)
-LDFLAGS_STATIC = $(shell $(PKGCONF) --static --libs libdpdk libcurl libmongoc2)
+CFLAGS += -O3 $(shell $(PKGCONF) --cflags libdpdk libcurl libmongoc2-static)
+LDFLAGS_SHARED = $(shell $(PKGCONF) --libs libdpdk libcurl libmongoc2-static)
+LDFLAGS_STATIC = $(shell $(PKGCONF) --static --libs libdpdk libcurl libmongoc2-static)
 
 ifeq ($(MAKECMDGOALS),static)
 # check for broken pkg-config
@@ -56,7 +56,7 @@ CFLAGS += -DALLOW_EXPERIMENTAL_API
 CFLAGS += -Wno-address-of-packed-member
 
 
-LDFLAGS_EXTRA = -lcjson -lnats -lpthread -lssl -lcrypto -lpcap -lcurl -lmongoc-1.0 -lbson2
+LDFLAGS_EXTRA = -lcjson -lnats -lpthread -lssl -lcrypto -lpcap -lcurl -lmongoc-1.0 -lbson2-static
 
 
 build/$(APP)-shared: $(SRCS-y) Makefile $(PC_FILE) | build
