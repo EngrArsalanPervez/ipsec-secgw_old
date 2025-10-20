@@ -3,6 +3,7 @@
  * Copyright (C) 2020 Marvell International Ltd.
  */
 #include <pcap.h>
+#include <unistd.h>
 #include <rte_acl.h>
 #include <rte_event_eth_tx_adapter.h>
 #include <rte_lpm.h>
