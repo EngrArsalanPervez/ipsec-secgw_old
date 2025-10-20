@@ -8,9 +8,9 @@
 #define NET_STATS 3
 #define UP_TIME 4
 
-mongoc_client_t *client;
-mongoc_collection_t *collection[DB_TOTALCOLLECTIONS];
-mongoc_uri_t *uri;
+mongoc_client_t* client;
+mongoc_collection_t* collection[DB_TOTALCOLLECTIONS];
+mongoc_uri_t* uri;
 
 void cleanup_mongo(void) {
   for (uint8_t i = 0; i < DB_TOTALCOLLECTIONS; i++)
@@ -38,24 +38,24 @@ void init_mongo_connection(void) {
   for (uint8_t i = 0; i < DB_TOTALCOLLECTIONS; i++) {
     char name[128] = {0};
     switch (i) {
-    case PORT_STATS:
-      strcpy(name, "portstats");
-      break;
-    case INTERFACE_STATS:
-      strcpy(name, "interfacestats");
-      break;
-    case DEVICE_STATS:
-      strcpy(name, "devicestats");
-      break;
-    case NET_STATS:
-      strcpy(name, "netstats");
-      break;
-    case UP_TIME:
-      strcpy(name, "mainconfigs");
-      break;
-    default:
-      printf("Unknown Collection Name\n");
-      exit(1);
+      case PORT_STATS:
+        strcpy(name, "portstats");
+        break;
+      case INTERFACE_STATS:
+        strcpy(name, "interfacestats");
+        break;
+      case DEVICE_STATS:
+        strcpy(name, "devicestats");
+        break;
+      case NET_STATS:
+        strcpy(name, "netstats");
+        break;
+      case UP_TIME:
+        strcpy(name, "mainconfigs");
+        break;
+      default:
+        printf("Unknown Collection Name\n");
+        exit(1);
     }
 
     collection[i] = mongoc_client_get_collection(client, "IPSec", name);
@@ -66,10 +66,10 @@ void init_mongo_connection(void) {
   }
 }
 
-void updateTimeToDB(struct appTimeStruct *appTime) {
+void updateTimeToDB(struct appTimeStruct* appTime) {
   bson_error_t error;
-  bson_t *update = NULL;
-  bson_t *query = NULL;
+  bson_t* update = NULL;
+  bson_t* query = NULL;
   query = BCON_NEW("id", BCON_INT32(1));
   update =
       BCON_NEW("$set", "{", "upInt", BCON_DOUBLE(appTime->totalSecondsElapsed),
@@ -91,8 +91,8 @@ fail:
 void updateAppStatsToDB(void) {
   for (uint8_t portid = 0; portid < 2; portid++) {
     bson_error_t error;
-    bson_t *update = NULL;
-    bson_t *query = NULL;
+    bson_t* update = NULL;
+    bson_t* query = NULL;
     query = BCON_NEW("portid", BCON_INT32(portid));
 
     update = BCON_NEW(
@@ -192,11 +192,11 @@ void updateAppStatsToDB(void) {
   }
 }
 
-void updateInterfaceStatsToDB(struct interfaceStatsStruct *interfaceStatsData,
+void updateInterfaceStatsToDB(struct interfaceStatsStruct* interfaceStatsData,
                               uint8_t portid) {
   bson_error_t error;
-  bson_t *update = NULL;
-  bson_t *query = NULL;
+  bson_t* update = NULL;
+  bson_t* query = NULL;
   query = BCON_NEW("portid", BCON_INT32(portid));
 
   update = BCON_NEW("$set", "{", "pktsReceived",
@@ -220,10 +220,10 @@ fail:
     bson_destroy(update);
 }
 
-void updateDeviceStatsToDB(struct deviceStatsStruct *deviceStatsData) {
+void updateDeviceStatsToDB(struct deviceStatsStruct* deviceStatsData) {
   bson_error_t error;
-  bson_t *update = NULL;
-  bson_t *query = NULL;
+  bson_t* update = NULL;
+  bson_t* query = NULL;
   query = BCON_NEW("deviceid", BCON_INT32(1));
 
   update =
@@ -248,10 +248,10 @@ fail:
     bson_destroy(update);
 }
 
-void insertNetstatToDB(struct netstatStruct *netstatData) {
+void insertNetstatToDB(struct netstatStruct* netstatData) {
   bson_error_t error;
   bson_oid_t oid;
-  bson_t *doc = bson_new();
+  bson_t* doc = bson_new();
   bson_oid_init(&oid, NULL);
   BSON_APPEND_OID(doc, "_id", &oid);
 
@@ -278,6 +278,7 @@ void insertNetstatToDB(struct netstatStruct *netstatData) {
     return;
   }
 
+  printf("SrcIP:%s\n", srcIP);
   if (!mongoc_collection_insert_one(collection[NET_STATS], doc, NULL, NULL,
                                     &error))
     fprintf(stderr, "Insert failed: %s\n", error.message);
