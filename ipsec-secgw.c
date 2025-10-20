@@ -3885,8 +3885,6 @@ int32_t main(int32_t argc, char** argv) {
   // NATS-Sub
   pthread_join(sub_tid, NULL);
 
-  cleanup_mongo();
-
   /* Uninitialize eventmode components */
   ret = eh_devs_uninit(eh_conf);
   if (ret < 0)
@@ -3934,6 +3932,7 @@ int32_t main(int32_t argc, char** argv) {
   }
 
   /* clean up the EAL */
+  cleanup_mongo();
   rte_eal_cleanup();
   printf("Bye...\n");
 
