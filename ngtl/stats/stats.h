@@ -94,7 +94,7 @@ struct appStatsStruct {
   struct udpServicesStruct udpServicesData;
 };
 
-extern struct appStatsStruct appStatsData[2];
+extern struct appStatsStruct appStatsData[4];
 
 void printAppStats(void);
 void tcpServices(uint16_t port, uint16_t portid);
