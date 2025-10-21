@@ -67,7 +67,6 @@
 #include "kni.h"
 #include "logs.h"
 #include "stats.h"
-#include "sub.h"
 #include "utility.h"
 
 // #define DUMP_PCAP
@@ -3863,12 +3862,6 @@ int32_t main(int32_t argc, char** argv) {
   open_pcap_file("dump.pcap");
 #endif
 
-  // NATS-Sub
-  pthread_t sub_tid;
-  if (pthread_create(&sub_tid, NULL, subscriber_thread, NULL) != 0) {
-    rte_exit(EXIT_FAILURE, "Failed to create subscriber pthread\n");
-  }
-
   init_mongo_connection();
 
   if (stats_interval > 0)
@@ -3882,9 +3875,6 @@ int32_t main(int32_t argc, char** argv) {
     if (rte_eal_wait_lcore(lcore_id) < 0)
       return -1;
   }
-
-  // NATS-Sub
-  pthread_join(sub_tid, NULL);
 
   /* Uninitialize eventmode components */
   ret = eh_devs_uninit(eh_conf);

@@ -3,17 +3,18 @@
  * Copyright (C) 2020 Marvell International Ltd.
  */
 #include <pcap.h>
-#include <unistd.h>
 #include <rte_acl.h>
 #include <rte_event_eth_tx_adapter.h>
 #include <rte_lpm.h>
 #include <rte_lpm6.h>
+#include <unistd.h>
 
 #include "event_helper.h"
 #include "ipsec-secgw.h"
 #include "ipsec.h"
 #include "ipsec_worker.h"
 #include "kni.h"
+#include "sub.h"
 #include "ngtl/kni/kni.h"
 
 struct port_drv_mode_data {
@@ -959,6 +960,12 @@ int ipsec_launch_one_lcore(void* args) {
     pthread_t log_tid;
     if (pthread_create(&log_tid, NULL, logsManagerLcore, NULL) != 0) {
       rte_exit(EXIT_FAILURE, "Failed to create log pthread\n");
+    }
+
+    // NATS-Sub
+    pthread_t sub_tid;
+    if (pthread_create(&sub_tid, NULL, subscriber_thread, NULL) != 0) {
+      rte_exit(EXIT_FAILURE, "Failed to create subscriber pthread\n");
     }
 
     kni_main(socket_ctx[0].mbuf_pool);

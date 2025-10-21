@@ -2,6 +2,7 @@
     "files.associations": {
         "*.php": "php",
         "unistd.h": "c",
-        "stats.h": "c"
+        "stats.h": "c",
+        "utility.h": "c"
     }
 }
