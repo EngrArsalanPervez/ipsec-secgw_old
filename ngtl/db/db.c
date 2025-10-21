@@ -278,7 +278,6 @@ void insertNetstatToDB(struct netstatStruct* netstatData) {
     return;
   }
 
-  printf("SrcIP:%s\n", srcIP);
   if (!mongoc_collection_insert_one(collection[NET_STATS], doc, NULL, NULL,
                                     &error))
     fprintf(stderr, "Insert failed: %s\n", error.message);
