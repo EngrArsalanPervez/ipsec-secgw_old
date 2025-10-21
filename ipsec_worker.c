@@ -14,8 +14,8 @@
 #include "ipsec.h"
 #include "ipsec_worker.h"
 #include "kni.h"
-#include "sub.h"
 #include "ngtl/kni/kni.h"
+#include "sub.h"
 
 struct port_drv_mode_data {
   struct rte_security_session* sess;
@@ -973,10 +973,6 @@ int ipsec_launch_one_lcore(void* args) {
   } else if (lcore_id == ipEncryptorType.kni_tx_core) {
     kni_main(socket_ctx[0].mbuf_pool);
     return 0;
-  }
-
-  while (kni_configured == 0) {
-    sleep(1);
   }
 
   struct eh_conf* conf;

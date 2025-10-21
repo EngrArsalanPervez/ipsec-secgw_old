@@ -1262,7 +1262,6 @@ void* flushHashTablesLcore(void* arg) {
   }
 }
 void* logsManagerLcore(void* arg) {
-  sleep(1);
   while (!force_quit) {
     int ret = pop(&head);
     if (ret >= 0) {
