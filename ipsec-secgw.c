@@ -65,6 +65,7 @@
 #include "db.h"
 #include "hashtable.h"
 #include "kni.h"
+#include "sub.h"
 #include "logs.h"
 #include "stats.h"
 #include "utility.h"
