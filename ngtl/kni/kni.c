@@ -46,15 +46,14 @@ struct ipEncryptorTypeStruct ipEncryptorType = {0};
 #define NB_RXD 1024
 #define NB_TXD 1024
 
-uint8_t kni_configured = 0;
 #define RTE_LOGTYPE_APP RTE_LOGTYPE_USER1
-struct kni_port_params *kni_port_params_array[RTE_MAX_ETHPORTS];
+struct kni_port_params* kni_port_params_array[RTE_MAX_ETHPORTS];
 uint32_t ports_mask = 0;
 int promiscuous_on_kni = 0;
 volatile uint32_t kni_stop = 0;
 volatile uint32_t kni_pause = 0;
 struct kni_interface_stats kni_stats[RTE_MAX_ETHPORTS];
-struct rte_mempool *pktmbuf_pool = NULL;
+struct rte_mempool* pktmbuf_pool = NULL;
 static struct rte_eth_conf port_conf = {
     .txmode =
         {
@@ -74,7 +73,7 @@ void signal_handler_kni(void) {
   return;
 }
 
-void kni_burst_free_mbufs(struct rte_mbuf **pkts, unsigned num) {
+void kni_burst_free_mbufs(struct rte_mbuf** pkts, unsigned num) {
   unsigned i;
 
   if (pkts == NULL)
@@ -87,7 +86,7 @@ void kni_burst_free_mbufs(struct rte_mbuf **pkts, unsigned num) {
 }
 
 // rx from eth, tx to kni
-void kni_ingress(struct kni_port_params *p) {
+void kni_ingress(struct kni_port_params* p) {
   if (p == NULL)
     return;
 
@@ -100,22 +99,24 @@ void kni_ingress(struct kni_port_params *p) {
   }
 }
 
-void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts,
-                            uint16_t port_id, struct route_table *rt) {
+void kni_filter_ike_packets(int32_t nb_rx,
+                            struct rte_mbuf** pkts,
+                            uint16_t port_id,
+                            struct route_table* rt) {
   int32_t i;
-  struct rte_mbuf *m;
+  struct rte_mbuf* m;
 
   for (i = 0; i < nb_rx; i++) {
     m = pkts[i];
 
-    struct rte_ether_hdr *eth = rte_pktmbuf_mtod(m, struct rte_ether_hdr *);
+    struct rte_ether_hdr* eth = rte_pktmbuf_mtod(m, struct rte_ether_hdr*);
 
     if (rte_be_to_cpu_16(eth->ether_type) != RTE_ETHER_TYPE_IPV4) {
       rte_pktmbuf_free(m);
       continue;
     }
 
-    struct rte_ipv4_hdr *ip = (struct rte_ipv4_hdr *)(eth + 1);
+    struct rte_ipv4_hdr* ip = (struct rte_ipv4_hdr*)(eth + 1);
 
     if ((ip->version_ihl >> 4) != 4 || ip->next_proto_id != IPPROTO_UDP) {
       rte_pktmbuf_free(m);
@@ -123,7 +124,7 @@ void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts,
     }
 
     uint16_t ip_hdr_len = (ip->version_ihl & 0x0f) * 4;
-    struct rte_udp_hdr *udp = (struct rte_udp_hdr *)((char *)ip + ip_hdr_len);
+    struct rte_udp_hdr* udp = (struct rte_udp_hdr*)((char*)ip + ip_hdr_len);
 
     uint16_t sport = rte_be_to_cpu_16(udp->src_port);
     uint16_t dport = rte_be_to_cpu_16(udp->dst_port);
@@ -153,12 +154,12 @@ void kni_filter_ike_packets(int32_t nb_rx, struct rte_mbuf **pkts,
 }
 
 // rx from kni, tx to eth
-void kni_egress(struct kni_port_params *p, struct route_table *rt) {
+void kni_egress(struct kni_port_params* p, struct route_table* rt) {
   uint8_t i;
   uint16_t port_id;
   unsigned nb_tx, num;
   uint32_t nb_kni;
-  struct rte_mbuf *pkts_burst[PKT_BURST_SZ];
+  struct rte_mbuf* pkts_burst[PKT_BURST_SZ];
 
   if (p == NULL)
     return;
@@ -178,7 +179,7 @@ void kni_egress(struct kni_port_params *p, struct route_table *rt) {
   }
 }
 
-int main_loop(void *arg) {
+int main_loop(void* arg) {
   uint16_t i;
   int32_t f_stop;
   int32_t f_pause;
@@ -214,7 +215,7 @@ int main_loop(void *arg) {
       if (f_pause)
         continue;
       kni_ingress(kni_port_params_array[i]);
-      rte_delay_us_sleep(1000); // sleep for 1 ms
+      rte_delay_us_sleep(1000);  // sleep for 1 ms
     }
   } else if (flag == LCORE_TX) {
     RTE_LOG(INFO, APP, "Lcore %u is writing to port %d\n",
@@ -228,7 +229,7 @@ int main_loop(void *arg) {
       if (f_pause)
         continue;
       kni_egress(kni_port_params_array[i], &rt);
-      rte_delay_us_sleep(100); // sleep for 100 µs
+      rte_delay_us_sleep(100);  // sleep for 100 µs
     }
   } else
     RTE_LOG(INFO, APP, "Lcore %u has nothing to do\n", lcore_id);
@@ -236,12 +237,12 @@ int main_loop(void *arg) {
   return 0;
 }
 
-int parse_config_kni(const char *arg) {
+int parse_config_kni(const char* arg) {
   const char *p, *p0 = arg;
   char s[256];
   unsigned size;
   int i, j, nb_token;
-  char *str_fld[KNI_MAX_KTHREAD + 3];
+  char* str_fld[KNI_MAX_KTHREAD + 3];
   unsigned long int_fld[KNI_MAX_KTHREAD + 3];
   uint16_t port_id;
 
@@ -293,7 +294,7 @@ int parse_config_kni(const char *arg) {
 
 void init_kni(void) {
   unsigned int num_of_kni_ports = 0, i;
-  struct kni_port_params **params = kni_port_params_array;
+  struct kni_port_params** params = kni_port_params_array;
   for (i = 0; i < RTE_MAX_ETHPORTS; i++) {
     if (kni_port_params_array[i]) {
       num_of_kni_ports += (params[i]->nb_lcore_k ? params[i]->nb_lcore_k : 1);
@@ -413,7 +414,7 @@ int kni_config_network_interface(uint16_t port_id, uint8_t if_up) {
   return ret;
 }
 
-void print_ethaddr1(const char *name, struct rte_ether_addr *mac_addr) {
+void print_ethaddr1(const char* name, struct rte_ether_addr* mac_addr) {
   char buf[RTE_ETHER_ADDR_FMT_SIZE];
   rte_ether_format_addr(buf, RTE_ETHER_ADDR_FMT_SIZE, mac_addr);
   RTE_LOG(INFO, APP, "\t%s%s\n", name, buf);
@@ -428,10 +429,10 @@ int kni_config_mac_address(uint16_t port_id, uint8_t mac_addr[]) {
   }
 
   RTE_LOG(INFO, APP, "Configure mac address of %d\n", port_id);
-  print_ethaddr1("Address:", (struct rte_ether_addr *)mac_addr);
+  print_ethaddr1("Address:", (struct rte_ether_addr*)mac_addr);
 
   ret = rte_eth_dev_default_mac_addr_set(port_id,
-                                         (struct rte_ether_addr *)mac_addr);
+                                         (struct rte_ether_addr*)mac_addr);
   if (ret < 0)
     RTE_LOG(ERR, APP, "Failed to config mac_addr for port %d\n", port_id);
 
@@ -440,9 +441,9 @@ int kni_config_mac_address(uint16_t port_id, uint8_t mac_addr[]) {
 
 int kni_alloc(uint16_t port_id) {
   uint8_t i;
-  struct rte_kni *kni;
+  struct rte_kni* kni;
   struct rte_kni_conf conf;
-  struct kni_port_params **params = kni_port_params_array;
+  struct kni_port_params** params = kni_port_params_array;
   int ret;
 
   if (port_id >= RTE_MAX_ETHPORTS || !params[port_id])
@@ -475,7 +476,7 @@ int kni_alloc(uint16_t port_id) {
                  port_id, strerror(-ret));
 
       ret =
-          rte_eth_macaddr_get(port_id, (struct rte_ether_addr *)&conf.mac_addr);
+          rte_eth_macaddr_get(port_id, (struct rte_ether_addr*)&conf.mac_addr);
       if (ret != 0)
         rte_exit(EXIT_FAILURE, "Failed to get MAC address (port %u): %s\n",
                  port_id, rte_strerror(-ret));
@@ -485,7 +486,7 @@ int kni_alloc(uint16_t port_id) {
              RTE_ETHER_ADDR_LEN);
 
       rte_ether_addr_copy(&hardcoded_mac,
-                          (struct rte_ether_addr *)&conf.mac_addr);
+                          (struct rte_ether_addr*)&conf.mac_addr);
 
       rte_eth_dev_get_mtu(port_id, &conf.mtu);
 
@@ -508,7 +509,7 @@ int kni_alloc(uint16_t port_id) {
     }
 
     RTE_LOG(INFO, APP, "KNI created: %s for port %u (pool=%p)\n", conf.name,
-            port_id, (void *)pktmbuf_pool);
+            port_id, (void*)pktmbuf_pool);
 
     params[port_id]->kni[i] = kni;
   }
@@ -516,8 +517,8 @@ int kni_alloc(uint16_t port_id) {
   return 0;
 }
 
-static uint32_t parse_unsigned(const char *portmask) {
-  char *end = NULL;
+static uint32_t parse_unsigned(const char* portmask) {
+  char* end = NULL;
   unsigned long num;
 
   num = strtoul(portmask, &end, 16);
@@ -527,35 +528,29 @@ static uint32_t parse_unsigned(const char *portmask) {
   return (uint32_t)num;
 }
 
-int kni_main(struct rte_mempool *shared_pool) {
-  const unsigned lcore_id = rte_lcore_id();
-  if (lcore_id == ipEncryptorType.kni_rx_core) {
-    int ret;
-    uint16_t nb_sys_ports, port;
-    if (shared_pool == NULL) {
-      rte_exit(EXIT_FAILURE, "KNI: no mbuf pool provided\n");
-    }
-    pktmbuf_pool = shared_pool;
-    RTE_LOG(INFO, APP, "KNI: using shared mbuf pool provided by caller\n");
-    init_kni();
-    ports_mask = parse_unsigned("0x1");
-    promiscuous_on_kni = 1;
-
-    char config_kni[32] = {0};
-    sprintf(config_kni, "(0,%d,%d,1)", ipEncryptorType.kni_rx_core,
-            ipEncryptorType.kni_tx_core);
-    ret = parse_config_kni(config_kni);
-    if (ret < 0)
-      rte_exit(EXIT_FAILURE, "Invalid KNI config\n");
-
-    kni_alloc(ipEncryptorType.client_port);
-
-    kni_configured = 1;
-
-    main_loop(NULL);
-  } else {
-    main_loop(NULL);
+int kni_config(struct rte_mempool* shared_pool) {
+  int ret;
+  uint16_t nb_sys_ports, port;
+  if (shared_pool == NULL) {
+    rte_exit(EXIT_FAILURE, "KNI: no mbuf pool provided\n");
   }
+  pktmbuf_pool = shared_pool;
+  RTE_LOG(INFO, APP, "KNI: using shared mbuf pool provided by caller\n");
+  init_kni();
+  ports_mask = parse_unsigned("0x1");
+  promiscuous_on_kni = 1;
 
+  char config_kni[32] = {0};
+  sprintf(config_kni, "(0,%d,%d,1)", ipEncryptorType.kni_rx_core,
+          ipEncryptorType.kni_tx_core);
+  ret = parse_config_kni(config_kni);
+  if (ret < 0)
+    rte_exit(EXIT_FAILURE, "Invalid KNI config\n");
+
+  kni_alloc(ipEncryptorType.client_port);
+}
+
+int kni_main(void) {
+  main_loop(NULL);
   return 0;
 }

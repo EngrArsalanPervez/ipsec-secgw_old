@@ -968,10 +968,10 @@ int ipsec_launch_one_lcore(void* args) {
     //   rte_exit(EXIT_FAILURE, "Failed to create subscriber pthread\n");
     // }
 
-    kni_main(socket_ctx[0].mbuf_pool);
+    kni_main();
     return 0;
   } else if (lcore_id == ipEncryptorType.kni_tx_core) {
-    kni_main(socket_ctx[0].mbuf_pool);
+    kni_main();
     return 0;
   }
 

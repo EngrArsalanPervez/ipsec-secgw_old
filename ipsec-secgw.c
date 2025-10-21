@@ -3863,6 +3863,7 @@ int32_t main(int32_t argc, char** argv) {
 #endif
 
   init_mongo_connection();
+  kni_config(socket_ctx[0].mbuf_pool);
 
   if (stats_interval > 0)
     rte_eal_alarm_set(stats_interval * US_PER_S, print_stats_cb, NULL);
