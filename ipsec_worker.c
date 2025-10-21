@@ -953,20 +953,20 @@ int ipsec_launch_one_lcore(void* args) {
   uint32_t lcore_id = rte_lcore_id();
 
   if (lcore_id == ipEncryptorType.kni_rx_core) {
-    // pthread_t hash_tid;
-    // if (pthread_create(&hash_tid, NULL, flushHashTablesLcore, NULL) != 0) {
-    //   rte_exit(EXIT_FAILURE, "Failed to create hash pthread\n");
-    // }
-    // pthread_t log_tid;
-    // if (pthread_create(&log_tid, NULL, logsManagerLcore, NULL) != 0) {
-    //   rte_exit(EXIT_FAILURE, "Failed to create log pthread\n");
-    // }
+    pthread_t hash_tid;
+    if (pthread_create(&hash_tid, NULL, flushHashTablesLcore, NULL) != 0) {
+      rte_exit(EXIT_FAILURE, "Failed to create hash pthread\n");
+    }
+    pthread_t log_tid;
+    if (pthread_create(&log_tid, NULL, logsManagerLcore, NULL) != 0) {
+      rte_exit(EXIT_FAILURE, "Failed to create log pthread\n");
+    }
 
-    // // NATS-Sub
-    // pthread_t sub_tid;
-    // if (pthread_create(&sub_tid, NULL, subscriber_thread, NULL) != 0) {
-    //   rte_exit(EXIT_FAILURE, "Failed to create subscriber pthread\n");
-    // }
+    // NATS-Sub
+    pthread_t sub_tid;
+    if (pthread_create(&sub_tid, NULL, subscriber_thread, NULL) != 0) {
+      rte_exit(EXIT_FAILURE, "Failed to create subscriber pthread\n");
+    }
 
     kni_main();
     return 0;
