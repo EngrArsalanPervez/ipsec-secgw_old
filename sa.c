@@ -485,8 +485,8 @@ void parse_sa_tokens(char **tokens, uint32_t n_tokens, struct parse_status *stat
             rule->digest_len = algo->digest_len;
 
             /* NULL algorithm and combined algos do not
-       * require auth key
-       */
+	     * require auth key
+	     */
             if (algo->key_not_req) {
                 auth_algo_p = 1;
                 continue;
