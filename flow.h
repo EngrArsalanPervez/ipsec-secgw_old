@@ -7,8 +7,7 @@
 
 #include "parser.h"
 
-void parse_flow_tokens(char **tokens, uint32_t n_tokens,
-		       struct parse_status *status);
+void parse_flow_tokens(char **tokens, uint32_t n_tokens, struct parse_status *status);
 
 void flow_init(void);
 

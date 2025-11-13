@@ -5,8 +5,8 @@
 #include <stdlib.h>
 
 struct Log {
-  int data;
-  struct Log *next;
+    int data;
+    struct Log *next;
 };
 
 void push(struct Log **head, int newData);
